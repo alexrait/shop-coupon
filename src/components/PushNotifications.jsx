@@ -45,8 +45,13 @@ export function usePushNotifications() {
                 return { error: 'Permission denied' };
             }
 
-            // Get VAPID public key
-            const vapidPublicKey = 'BLkj4FP1wgWtz3lnUWfC3Le8xm9zfKKcOqWbMr6jR6p9Q7iN-2lhxTq7TlY68U30C1oL2ltuM6uoT8f9yB1Trz4';
+            // Get VAPID public key from env
+            const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+
+            if (!vapidPublicKey) {
+                console.error('VITE_VAPID_PUBLIC_KEY is not set');
+                return { error: 'Push notifications not configured' };
+            }
 
             const sub = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
