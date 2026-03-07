@@ -145,7 +145,7 @@ function SortableCouponItem({ coupon, idx, rtl, t, startEdit, markStatus }) {
 }
 
 export function CouponList() {
-    const { privateKey, publicKey, vaultId, vaultName, updateVaultName } = useVault();
+    const { privateKey, publicKey, vaultId, vaultName, updateVaultName, closeVault } = useVault();
     const { apiFetch } = useAuth();
     const { t, rtl } = useLanguage();
 
@@ -417,10 +417,20 @@ export function CouponList() {
         <>
             <Card className="shadow-xl bg-card border-border">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                            <Icons.Cart size={24} className="text-primary shrink-0" />
-                            {isRenamingVault ? (
+                    <div className="flex items-center gap-4 space-y-1">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-muted-foreground hover:text-primary transition-colors shrink-0" 
+                            onClick={closeVault}
+                            title={t('back')}
+                        >
+                            <Icons.Logout size={20} className={rtl ? '' : 'rotate-180'} />
+                        </Button>
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <Icons.Cart size={24} className="text-primary shrink-0" />
+                                {isRenamingVault ? (
                                 <form onSubmit={handleRenameVault} className="flex items-center gap-2">
                                     <Input 
                                         size="sm"
@@ -439,6 +449,7 @@ export function CouponList() {
                                 </CardTitle>
                             )}
                         </div>
+                    </div>
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                             <Icons.Vault size={12} /> {t('id')}: {vaultId}
                         </p>

@@ -31,6 +31,14 @@ export function VaultProvider({ children }) {
         setVaultName(newName);
     };
 
+    const closeVault = () => {
+        setPrivateKey(null);
+        setPublicKey(null);
+        setActiveListKey(null);
+        setVaultId(null);
+        setVaultName(null);
+    };
+
     const clearKeys = async () => {
         if (user?.id && vaultId) {
             await persistenceUtils.removeKey(vaultId, user.id);
