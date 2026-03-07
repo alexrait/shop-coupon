@@ -164,11 +164,14 @@ export function CouponList() {
     };
 
     const handleMagicFormat = () => {
-        // Remove all non-alphanumeric chars
-        const clean = code.replace(/[^A-Z0-9]/gi, '');
+        // Remove existing hyphens
+        const clean = code.replace(/-/g, '');
         if (clean.length > 0) {
+            // Split into 4-character chunks
             const chunks = clean.match(/.{1,4}/g);
-            setCode(chunks.join('-'));
+            if (chunks) {
+                setCode(chunks.join('-'));
+            }
         }
     };
 
