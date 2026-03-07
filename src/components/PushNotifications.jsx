@@ -46,7 +46,7 @@ export function usePushNotifications() {
             }
 
             // Get VAPID public key
-            const vapidPublicKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+            const vapidPublicKey = 'BLkj4FP1wgWtz3lnUWfC3Le8xm9zfKKcOqWbMr6jR6p9Q7iN-2lhxTq7TlY68U30C1oL2ltuM6uoT8f9yB1Trz4';
 
             const sub = await registration.pushManager.subscribe({
                 userVisibleOnly: true,

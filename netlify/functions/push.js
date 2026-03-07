@@ -3,7 +3,7 @@ import webpush from 'web-push';
 
 // In production, these should be environment variables:
 // VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
-const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || 'BLkj4FP1wgWtz3lnUWfC3Le8xm9zfKKcOqWbMr6jR6p9Q7iN-2lhxTq7TlY68U30C1oL2ltuM6uoT8f9yB1Trz4';
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || 'your-private-key-here'; // Must be set in Netlify
 const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:example@example.com';
 
