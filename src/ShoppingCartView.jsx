@@ -525,7 +525,8 @@ export function ShoppingCartView() {
                                 <div className="space-y-2">
                                     <Label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">{t('quantity')}</Label>
                                     <Input
-                                        type="number"
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
                                         min="1"
                                         value={quantity}
                                         onChange={(e) => setQuantity(e.target.value)}
