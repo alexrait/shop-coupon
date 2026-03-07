@@ -2,11 +2,11 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const translations = {
     en: {
-        appName: "Vault Cart",
-        welcome: "Welcome to Vault Cart",
+        appName: "Coupon Chest",
+        welcome: "Welcome to Coupon Chest",
         tagline: "End-to-End Encrypted Coupon Management.",
         login: "Login to Continue",
-        loginVault: "Login to Vault",
+        loginVault: "Login",
         dashboard: "Dashboard",
         welcomeBack: "Welcome back, {name}",
         vaults: "Your Vaults",
@@ -55,13 +55,19 @@ const translations = {
         edit: "Edit",
         formatCode: "Format Code",
         viewCode: "View Details/Code",
+        heroTitle: "Your coupons,",
+        heroHighlight: "locked & loaded.",
+        feature1: "End-to-end encrypted — only you can read your data",
+        feature2: "Organize coupons in secure, password-protected vaults",
+        feature3: "Share vault access with trusted team members",
+        feature4: "Full activity history so nothing gets lost",
     },
     he: {
-        appName: "כספת הקופונים",
-        welcome: "ברוכים הבאים לכספת הקופונים",
+        appName: "ארגז הקופונים",
+        welcome: "ברוכים הבאים לארגז הקופונים",
         tagline: "ניהול קופונים מוצפן מקצה לקצה.",
         login: "התחברו כדי להמשיך",
-        loginVault: "כניסה לכספת",
+        loginVault: "כניסה",
         dashboard: "לוח בקרה",
         welcomeBack: "ברוך שובך, {name}",
         vaults: "הכספות שלי",
@@ -110,6 +116,12 @@ const translations = {
         edit: "עריכה",
         formatCode: "עצב קוד",
         viewCode: "פרטים / קוד",
+        heroTitle: "הקופונים שלך,",
+        heroHighlight: "מאובטחים ומוכנים.",
+        feature1: "הצפנה מקצה לקצה — רק אתה יכול לקרוא את הנתונים שלך",
+        feature2: "ארגן קופונים בכספות מאובטחות עם סיסמה",
+        feature3: "שתף גישה לכספת עם חברי צוות מהימנים",
+        feature4: "היסטוריית פעילות מלאה כדי שלא תפספס דבר",
     }
 };
 
