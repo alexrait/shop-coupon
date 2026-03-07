@@ -218,12 +218,21 @@ export const cryptoUtils = {
     },
 
     base64ToArrayBuffer(base64) {
-        const binary_string = window.atob(base64);
-        const len = binary_string.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-            bytes[i] = binary_string.charCodeAt(i);
+        if (!base64 || typeof base64 !== 'string') return new Uint8Array(0).buffer;
+        try {
+            // Remove any whitespace or hidden chars that might have sneaked in
+            const cleanBase64 = base64.trim().replace(/[\n\r\s]/g, '');
+            const binary_string = window.atob(cleanBase64);
+            const len = binary_string.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binary_string.charCodeAt(i);
+            }
+            return bytes.buffer;
+        } catch (e) {
+            console.error("Base64 decoding failed:", e);
+            // Return dummy buffer to avoid downstream crashes, the actual crypto call will fail cleanly
+            return new Uint8Array(0).buffer;
         }
-        return bytes.buffer;
     }
 };

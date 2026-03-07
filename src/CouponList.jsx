@@ -64,7 +64,15 @@ export function CouponList() {
                         };
                     } catch (err) {
                         console.error("Failed to decrypt coupon:", err);
-                        return { title: t('decryptionFailed'), id: row.id, error: true, status: row.status };
+                        // Return a fallback object that preserves metadata so the UI doesn't crash
+                        return { 
+                            title: t('decryptionFailed'), 
+                            id: row.id, 
+                            error: true, 
+                            status: row.status,
+                            created_at: row.created_at,
+                            position: row.position
+                        };
                     }
                 }));
                 decrypted.sort((a, b) => (a.position || 0) - (b.position || 0));
