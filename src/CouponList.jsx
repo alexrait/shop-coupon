@@ -140,9 +140,15 @@ export function CouponList() {
 
             if (res.ok) {
                 await fetchCoupons();
-                setIsAdding(false);
-                setEditingCoupon(null);
-                setTitle(''); setCode(''); setValue(''); setImageBase64('');
+                // Stay on screen, but if it was "Add", reset the title/code for the next one
+                if (!editingCoupon) {
+                    setTitle(''); setCode(''); setValue(''); setImageBase64('');
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                } else {
+                    // If editing, maybe update the local editingCoupon state with the new data?
+                    // Actually, the user wants to STAY on the screen. 
+                    // Let's just alert success so they know it's done.
+                }
             } else {
                 alert("Failed to save coupon");
             }
