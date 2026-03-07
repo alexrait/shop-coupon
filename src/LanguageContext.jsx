@@ -91,6 +91,10 @@ const translations = {
         confirmDeleteItem: "Are you sure you want to delete this item?",
         confirmDeleteList: "Are you sure you want to delete this list?",
         create: "Create",
+        itemAdded: "Item added",
+        itemBought: "Item bought",
+        itemDeleted: "Item deleted",
+        couponDeleted: "Coupon deleted",
     },
     he: {
         appName: "ארגז הקופונים",
@@ -182,6 +186,10 @@ const translations = {
         confirmDeleteItem: "האם אתם בטוחים שברצונכם למחוק פריט זה?",
         confirmDeleteList: "האם אתם בטוחים שברצונכם למחוק רשימה זו?",
         create: "צור",
+        itemAdded: "פריט נוסף",
+        itemBought: "פריט נקנה",
+        itemDeleted: "פריט נמחק",
+        couponDeleted: "קופון נמחק",
     }
 };
 

@@ -4,9 +4,9 @@ import { useAuth } from './useAuth';
 import { VaultProvider, useVault } from './VaultContext';
 import { VaultManager } from './VaultManager';
 import { CouponList } from './CouponList';
-import { CouponHistory } from './CouponHistory';
 import { ShoppingListManager } from './ShoppingListManager';
 import { ShoppingCartView } from './ShoppingCartView';
+import { ActivityPage } from './ActivityPage';
 import { Icons } from './components/icons';
 import { Button } from './components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card';
@@ -126,15 +126,8 @@ const VaultView = ({ user }) => {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 animate-in fade-in duration-700">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <CouponList />
-        </div>
-        <div className="lg:col-span-1">
-          <CouponHistory />
-        </div>
-      </div>
+    <div className="container mx-auto py-4 px-2 sm:px-4 animate-in fade-in duration-700">
+      <CouponList />
     </div>
   );
 };
@@ -161,7 +154,12 @@ function AppContent() {
                 <Icons.Vault size={32} className="text-primary group-hover:scale-110 transition-transform" />
                 <span className="text-xl font-bold tracking-tight">{t('appName')}</span>
               </Link>
-            <nav className="flex items-center gap-4">
+            <nav className="flex items-center gap-2">
+              {user && (
+                <Link to="/activity" className="p-2 text-muted-foreground hover:text-primary transition-colors rounded-md hover:bg-muted">
+                  <Icons.History size={20} />
+                </Link>
+              )}
               <Button variant="ghost" size="sm" onClick={toggleLanguage} className="font-bold">
                 {lang === 'en' ? 'HE' : 'EN'}
               </Button>
@@ -195,13 +193,16 @@ function AppContent() {
             <Route path="/shopping-list/:listId" element={
               user ? <ShoppingCartView /> : <Navigate to="/" replace />
             } />
+            <Route path="/activity" element={
+              user ? <ActivityPage /> : <Navigate to="/" replace />
+            } />
             <Route path="/security" element={<SecurityPage />} />
           </Routes>
         </main>
 
         <footer className="border-t py-6">
-          <div className="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
-            <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
+          <div className="container flex flex-col items-center gap-4">
+            <p className="text-center text-sm leading-loose text-muted-foreground">
               {t('builtWithSecurity')}
             </p>
             <div className="flex gap-4 text-sm font-medium text-muted-foreground">
