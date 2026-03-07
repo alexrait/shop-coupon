@@ -13,6 +13,17 @@ export const handler = async (event, context) => {
     try {
         await ensureDbReady(sql, user);
 
+        // Security check: ensure user has access to this list
+        const [access] = await sql`
+            SELECT 1 FROM shopcoupon.lists l
+            LEFT JOIN shopcoupon.list_members lm ON l.id = lm.list_id
+            WHERE l.id = ${listId} AND (l.owner_id = ${userId} OR lm.user_id = ${userId})
+        `;
+
+        if (!access) {
+            return { statusCode: 403, body: 'Forbidden - No access to this vault' };
+        }
+
         const logs = await sql`
             SELECT al.*
             FROM shopcoupon.action_logs al
