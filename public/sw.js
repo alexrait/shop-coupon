@@ -1,4 +1,4 @@
-const CACHE_NAME = 'coupon-chest-v1.0.2';
+const CACHE_NAME = 'coupon-chest-v1.0.3';
 const urlsToCache = [
     '/',
     '/index.html',
@@ -29,8 +29,11 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-    // Skip non-http/https requests (like chrome-extension://)
-    if (!(event.request.url.startsWith('http'))) return;
+    const url = event.request.url;
+    // Strictly only cache internal app requests, ignore extensions and other schemes
+    if (!url.startsWith(self.location.origin) || !url.startsWith('http')) {
+        return;
+    }
 
     event.respondWith(
         caches.match(event.request)
