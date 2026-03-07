@@ -1,7 +1,12 @@
 import { neon } from '@netlify/neon';
 
 export const getDb = () => {
-  return neon();
+  try {
+    return neon();
+  } catch (e) {
+    console.error("Neon connection failed. Is DATABASE_URL set in Netlify Environment Variables?");
+    throw new Error("Database connection failed. Please ensure the Neon integration is configured in Netlify.");
+  }
 };
 
 export const initSchema = async () => {

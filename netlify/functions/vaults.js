@@ -10,6 +10,15 @@ export const handler = async (event, context) => {
     const method = event.httpMethod;
 
     try {
+        // Auto-initialize schema if it doesn't exist (safety check for production)
+        try {
+            await sql`SELECT 1 FROM shopcoupon.users LIMIT 1`;
+        } catch (e) {
+            console.log("Schema might be missing, attempting auto-init...");
+            const { initSchema } = await import('./db.js');
+            await initSchema();
+        }
+
         // Ensure user exists in our DB wrapper
         await sql`
             INSERT INTO shopcoupon.users (id, email) 
