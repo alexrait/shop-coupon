@@ -371,6 +371,9 @@ export function ShoppingCartView() {
                         </div>
                     </div>
                     <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setIsInviting(!isInviting)}>
+                            <Icons.UserPlus size={16} className={rtl ? 'ml-2' : 'mr-2'} /> {t('share')}
+                        </Button>
                         <Button size="sm" onClick={() => setIsDialogOpen(true)}>
                             <Icons.Add size={16} className={rtl ? 'ml-2' : 'mr-2'} /> {t('addItem')}
                         </Button>
@@ -378,6 +381,35 @@ export function ShoppingCartView() {
                 </CardHeader>
                 <CardContent>
                     <Separator className="mb-6 opacity-40" />
+
+                    {isInviting && (
+                        <Card className="mb-6 border-border bg-muted/30 animate-in slide-in-from-right-4 duration-300">
+                            <CardHeader className="py-4 text-start">
+                                <CardTitle className="text-sm">{t('inviteMember')}</CardTitle>
+                            </CardHeader>
+                            <form onSubmit={handleInvite}>
+                                <CardContent className="py-0 pb-4">
+                                    <Input
+                                        type="email"
+                                        required
+                                        value={inviteEmail}
+                                        onChange={e => setInviteEmail(e.target.value)}
+                                        placeholder={t('enterEmail')}
+                                        className="text-start bg-background"
+                                    />
+                                </CardContent>
+                                <CardFooter className="flex gap-2 py-4 pt-0">
+                                    <Button size="sm" className="w-full" disabled={inviteLoading}>
+                                        {inviteLoading ? <Loader2 className="animate-spin mr-2 ml-2" size={14} /> : <Icons.Share size={14} className={rtl ? 'ml-2' : 'mr-2'} />}
+                                        {t('sendAccess')}
+                                    </Button>
+                                    <Button size="sm" variant="ghost" type="button" onClick={() => setIsInviting(false)}>
+                                        <Icons.Logout size={14} className={rtl ? 'rotate-180' : ''} />
+                                    </Button>
+                                </CardFooter>
+                            </form>
+                        </Card>
+                    )}
 
                     {pendingCount > 0 && (
                         <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center gap-3 text-sm">
