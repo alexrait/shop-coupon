@@ -17,7 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import { useAuth } from './useAuth';
+import { useAuth } from './AuthContext';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Icons } from './components/icons';
 import { Button } from './components/ui/button';

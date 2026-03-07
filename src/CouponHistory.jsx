@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useVault } from './VaultContext';
-import { useAuth } from './useAuth';
+import { useAuth } from './AuthContext';
 import { Icons } from './components/icons';
 import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card';
 import { ScrollArea } from './components/ui/scroll-area';

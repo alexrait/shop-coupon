@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { cryptoUtils } from './lib/crypto';
 import { persistenceUtils } from './lib/persistence';
 import { useVault } from './VaultContext';
-import { useAuth } from './useAuth';
+import { useAuth } from './AuthContext';
 import { Icons } from './components/icons';
 import { Button } from './components/ui/button';
 import { useNavigate } from 'react-router-dom';

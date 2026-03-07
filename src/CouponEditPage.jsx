@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useAuth } from './useAuth';
+import { useAuth } from './AuthContext';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useVault } from './VaultContext';
 import { 

@@ -20,7 +20,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 import { cryptoUtils } from './lib/crypto';
 import { useVault } from './VaultContext';
-import { useAuth } from './useAuth';
+import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Icons } from './components/icons';
 import { Button } from './components/ui/button';

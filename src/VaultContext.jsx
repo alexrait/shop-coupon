@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { persistenceUtils } from './lib/persistence';
-import { useAuth } from './useAuth';
+import { useAuth } from './AuthContext';
 
 const VaultContext = createContext(undefined);
 
