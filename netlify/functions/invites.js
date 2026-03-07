@@ -18,10 +18,12 @@ export const handler = async (event, context) => {
             const isShoppingList = list_type === 'shopping';
 
             // 1. Verify requester owns the list
-            const table = isShoppingList ? 'shopcoupon.shopping_lists' : 'shopcoupon.lists';
-            const [list] = await sql`
-                SELECT owner_id FROM ${sql(table)} WHERE id = ${list_id}
-            `;
+            let list;
+            if (isShoppingList) {
+                [list] = await sql`SELECT owner_id FROM shopcoupon.shopping_lists WHERE id = ${list_id}`;
+            } else {
+                [list] = await sql`SELECT owner_id FROM shopcoupon.lists WHERE id = ${list_id}`;
+            }
 
             if (!list || list.owner_id !== userId) {
                 return { statusCode: 403, body: 'Only owners can invite others' };
@@ -40,12 +42,19 @@ export const handler = async (event, context) => {
             }
 
             // 3. Add to members
-            const membersTable = isShoppingList ? 'shopcoupon.shopping_list_members' : 'shopcoupon.list_members';
-            await sql`
-                INSERT INTO ${sql(membersTable)} (list_id, user_id)
-                VALUES (${list_id}, ${targetUser.id})
-                ON CONFLICT DO NOTHING
-            `;
+            if (isShoppingList) {
+                await sql`
+                    INSERT INTO shopcoupon.shopping_list_members (list_id, user_id)
+                    VALUES (${list_id}, ${targetUser.id})
+                    ON CONFLICT DO NOTHING
+                `;
+            } else {
+                await sql`
+                    INSERT INTO shopcoupon.list_members (list_id, user_id)
+                    VALUES (${list_id}, ${targetUser.id})
+                    ON CONFLICT DO NOTHING
+                `;
+            }
 
             return { statusCode: 200, body: JSON.stringify({ message: 'User invited successfully' }) };
         }
