@@ -217,7 +217,7 @@ function AppContent() {
             <div className="flex gap-4 text-sm font-medium text-muted-foreground">
               <Link to="/privacy" className="hover:text-primary transition-colors cursor-pointer">{t('privacy')}</Link>
               <Link to="/terms" className="hover:text-primary transition-colors cursor-pointer">{t('terms')}</Link>
-              <span className="text-xs opacity-50">v1.0.2</span>
+              <span className="text-xs opacity-50">v1.0.3</span>
             </div>
           </div>
         </footer>
