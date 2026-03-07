@@ -87,14 +87,15 @@ export function ShoppingListManager() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
                 <h3 className="text-2xl font-semibold flex items-center gap-2">
                     <Icons.ShoppingCart className="text-primary" /> {t('shoppingLists')}
                 </h3>
                 <Button
+                    size="sm"
                     onClick={() => setIsCreating(!isCreating)}
                 >
-                    <Icons.Add size={18} className={rtl ? 'ml-2' : 'mr-2'} /> {t('newShoppingList')}
+                    <Icons.Add size={16} className={rtl ? 'ml-1' : 'mr-1'} /> {t('newShoppingList')}
                 </Button>
             </div>
 

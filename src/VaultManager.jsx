@@ -146,14 +146,15 @@ export function VaultManager({ user }) {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
                 <h3 className="text-2xl font-semibold flex items-center gap-2">
                     <Icons.Key className="text-primary" /> {t('vaults')}
                 </h3>
                 <Button
+                    size="sm"
                     onClick={() => { setIsCreating(!isCreating); setUnlockingVault(null); setPassword(''); }}
                 >
-                    <Icons.Add size={18} className={rtl ? 'ml-2' : 'mr-2'} /> {t('newVault')}
+                    <Icons.Add size={16} className={rtl ? 'ml-1' : 'mr-1'} /> {t('newVault')}
                 </Button>
             </div>
 
