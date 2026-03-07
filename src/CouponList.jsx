@@ -7,7 +7,6 @@ import {
     PointerSensor, 
     useSensor, 
     useSensors,
-    DragOverlay
 } from '@dnd-kit/core';
 import {
     arrayMove,
@@ -129,18 +128,38 @@ function SortableCouponItem({ coupon, idx, rtl, t, startEdit, markStatus }) {
 
 export function CouponList() {
     const { privateKey, publicKey, vaultId, vaultName, updateVaultName, closeVault } = useVault();
-    const { apiFetch } = useAuth();
+    const { apiFetch, user } = useAuth();
     const navigate = useNavigate();
     const { t, rtl } = useLanguage();
 
     const [coupons, setCoupons] = useState([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingCoupon, setEditingCoupon] = useState(null);
+    const [fetching, setFetching] = useState(true);
+
+    const [title, setTitle] = useState('');
+    const [code, setCode] = useState('');
+    const [value, setValue] = useState('');
+    const [expiryDate, setExpiryDate] = useState('');
+    const [imageBase64, setImageBase64] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [isRenamingVault, setIsRenamingVault] = useState(false);
+    const [newVaultName, setNewVaultName] = useState(vaultName);
+
     const [isInviting, setIsInviting] = useState(false);
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteLoading, setInviteLoading] = useState(false);
     const [members, setMembers] = useState([]);
     const [ownerId, setOwnerId] = useState(null);
+
+    const fileInputRef = useRef(null);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
 
     useEffect(() => {
         if (vaultId) {
@@ -164,81 +183,20 @@ export function CouponList() {
 
     const isOwner = user?.id === ownerId;
 
-    const handleInvite = async (e) => {
-        e.preventDefault();
-        setInviteLoading(true);
-        try {
-            const res = await apiFetch(`/api/invites`, {
-                method: 'POST',
-                body: JSON.stringify({ list_id: vaultId, email: inviteEmail, list_type: 'vault' })
-            });
-            if (res.ok) {
-                setInviteEmail('');
-                fetchMembers();
-            } else {
-                const data = await res.json();
-                alert(data.error || 'User not found or already invited.');
-            }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setInviteLoading(false);
-        }
-    };
-
-    const handleRemoveMember = async (targetUserId) => {
-        if (!confirm("Remove this member?")) return;
-        try {
-            const res = await apiFetch(`/api/invites?list_id=${vaultId}&list_type=vault&user_id=${targetUserId}`, {
-                method: 'DELETE'
-            });
-            if (res.ok) {
-                fetchMembers();
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
     const fetchCoupons = async () => {
-
-    const isOwner = user?.sub === ownerId;
-
-    const handleInvite = async (e) => {
-        e.preventDefault();
-        setInviteLoading(true);
+        setFetching(true);
         try {
-            const res = await apiFetch(`/api/invites`, {
-                method: 'POST',
-                body: JSON.stringify({ list_id: vaultId, email: inviteEmail, list_type: 'vault' })
-            });
+            const res = await apiFetch(`/api/coupons?list_id=${vaultId}`);
             if (res.ok) {
-                setInviteEmail('');
-                fetchMembers();
-            } else {
                 const data = await res.json();
-                alert(data.error || 'User not found or already invited.');
-            }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setInviteLoading(false);
-        }
-    };
-
-    const handleRemoveMember = async (targetUserId) => {
-        if (!confirm("Remove this member?")) return;
-        try {
-            const res = await apiFetch(`/api/invites?list_id=${vaultId}&list_type=vault&user_id=${targetUserId}`, {
-                method: 'DELETE'
-            });
-            if (res.ok) {
-                fetchMembers();
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    };
+                const decrypted = await Promise.all(data.map(async (row) => {
+                    try {
+                        const { encrypted_data, iv, encrypted_aes_key } = row.encrypted_payload;
+                        const aesKeyBase64 = await cryptoUtils.decryptRSA(encrypted_aes_key, privateKey);
+                        const aesKey = await cryptoUtils.importAESKey(aesKeyBase64);
+                        const decryptedStr = await cryptoUtils.decryptAES(encrypted_data, iv, aesKey);
+                        const payload = JSON.parse(decryptedStr);
+                        return { ...payload, id: row.id, status: row.status, created_at: row.created_at, position: row.position };
                     } catch (err) {
                         console.error("Failed to decrypt coupon:", err);
                         return { 
@@ -388,8 +346,6 @@ export function CouponList() {
 
         const newItems = arrayMove(coupons, oldIndex, newIndex);
         
-        // Optimistic UI update
-        // We need to recalculate positions to ensure they are unique and ordered
         const updatedItems = newItems.map((item, index) => ({
             ...item,
             position: index * 10
@@ -397,9 +353,6 @@ export function CouponList() {
         setCoupons(updatedItems);
 
         try {
-            // Update the positions in the backend
-            // For simplicity, we just update the two neighbors or all affected?
-            // Actually, dnd-kit gives us the final order. Best to persist the changed positions.
             await Promise.all(updatedItems.map((c, idx) => {
                 if (c.position !== coupons.find(orig => orig.id === c.id)?.position) {
                     return apiFetch(`/api/coupons?list_id=${vaultId}&id=${c.id}`, {
@@ -411,7 +364,7 @@ export function CouponList() {
             }));
         } catch (err) {
             console.error("Reorder failed:", err);
-            fetchCoupons(); // Revert on failure
+            fetchCoupons();
         }
     };
 
@@ -419,21 +372,35 @@ export function CouponList() {
         e.preventDefault();
         setInviteLoading(true);
         try {
-            const res = await apiFetch(`/api/invites?list_id=${vaultId}`, {
+            const res = await apiFetch(`/api/invites`, {
                 method: 'POST',
-                body: JSON.stringify({ email: inviteEmail })
+                body: JSON.stringify({ list_id: vaultId, email: inviteEmail, list_type: 'vault' })
             });
             if (res.ok) {
-                alert('Invite sent!');
                 setInviteEmail('');
-                setIsInviting(false);
+                fetchMembers();
             } else {
-                alert('User not found or already invited.');
+                const data = await res.json();
+                alert(data.error || 'User not found or already invited.');
             }
         } catch (err) {
             console.error(err);
         } finally {
             setInviteLoading(false);
+        }
+    };
+
+    const handleRemoveMember = async (targetUserId) => {
+        if (!confirm("Remove this member?")) return;
+        try {
+            const res = await apiFetch(`/api/invites?list_id=${vaultId}&list_type=vault&user_id=${targetUserId}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                fetchMembers();
+            }
+        } catch (err) {
+            console.error(err);
         }
     };
 
@@ -519,11 +486,11 @@ export function CouponList() {
 
                                     {members.length > 0 && (
                                         <div className="space-y-2 mt-4">
-                                            <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Members</p>
+                                            <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2 text-start">Members</p>
                                             {members.map(member => (
                                                 <div key={member.id} className="flex items-center justify-between bg-background/50 p-2 rounded text-xs">
                                                     <span className="truncate mr-2">{member.email}</span>
-                                                    {isOwner && member.id !== user?.sub && (
+                                                    {isOwner && member.id !== user?.id && (
                                                         <Button 
                                                             variant="ghost" 
                                                             size="icon" 
