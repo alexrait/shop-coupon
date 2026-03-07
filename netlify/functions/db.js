@@ -89,6 +89,15 @@ export const runMigrations = async (sql) => {
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
       END IF;
+
+      IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='shopcoupon' AND table_name='push_subscriptions') THEN
+        CREATE TABLE shopcoupon.push_subscriptions (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id UUID REFERENCES shopcoupon.users(id) ON DELETE CASCADE,
+          subscription JSONB NOT NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+      END IF;
     END $$;
   `;
 };

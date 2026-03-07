@@ -101,7 +101,7 @@ function SortableCouponItem({ coupon, idx, rtl, t, startEdit, markStatus }) {
             </div>
 
             {/* Actions */}
-            <div className={`flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity ${rtl ? 'flex-row-reverse' : ''}`}>
+            <div className={`flex items-center gap-1 transition-opacity ${rtl ? 'flex-row-reverse' : ''}`}>
                 {coupon.status !== 'used' && (
                     <Button 
                         variant="ghost" 

@@ -21,6 +21,9 @@ export function ShoppingListManager() {
     const [listName, setListName] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
 
+    const [editingListId, setEditingListId] = useState(null);
+    const [editingName, setEditingName] = useState('');
+
     useEffect(() => {
         loadLists();
     }, []);
@@ -41,7 +44,37 @@ export function ShoppingListManager() {
     };
 
     const handleListClick = (list) => {
-        navigate(`/shopping-list/${list.id}`, { state: { listName: list.name } });
+        if (editingListId !== list.id) {
+            navigate(`/shopping-list/${list.id}`, { state: { listName: list.name } });
+        }
+    };
+
+    const startRename = (list, e) => {
+        e.stopPropagation();
+        setEditingListId(list.id);
+        setEditingName(list.name);
+    };
+
+    const handleRename = async (listId) => {
+        if (!editingName.trim()) {
+            setEditingListId(null);
+            return;
+        }
+
+        try {
+            const res = await apiFetch(`/api/shopping-lists?list_id=${listId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ name: editingName.trim() })
+            });
+
+            if (res.ok) {
+                setLists(lists.map(l => l.id === listId ? { ...l, name: editingName.trim() } : l));
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setEditingListId(null);
+        }
     };
 
     const handleCreateList = async (e) => {

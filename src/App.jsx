@@ -7,14 +7,16 @@ import { CouponList } from './CouponList';
 import { ShoppingListManager } from './ShoppingListManager';
 import { ShoppingCartView } from './ShoppingCartView';
 import { ActivityPage } from './ActivityPage';
+import { NotificationSettings } from './components/PushNotifications';
 import { Icons } from './components/icons';
 import { Button } from './components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card';
 import { LanguageProvider, useLanguage } from './LanguageContext';
-import { PrivacyModal, TermsModal } from './components/LegalModals';
+import PrivacyPage from './PrivacyPage';
+import TermsPage from './TermsPage';
 import SecurityPage from './SecurityPage';
 
-const Home = ({ login, onShowPrivacy, onShowTerms }) => {
+const Home = ({ login }) => {
   const { t } = useLanguage();
 
   const features = [
@@ -81,12 +83,12 @@ const Home = ({ login, onShowPrivacy, onShowTerms }) => {
         </Link>
 
         <div className="flex justify-center gap-6 text-xs text-muted-foreground">
-          <button onClick={onShowPrivacy} className="hover:text-primary transition-colors underline underline-offset-2 cursor-pointer">
+          <Link to="/privacy" className="hover:text-primary transition-colors underline underline-offset-2 cursor-pointer">
             {t('privacy')}
-          </button>
-          <button onClick={onShowTerms} className="hover:text-primary transition-colors underline underline-offset-2 cursor-pointer">
+          </Link>
+          <Link to="/terms" className="hover:text-primary transition-colors underline underline-offset-2 cursor-pointer">
             {t('terms')}
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -113,6 +115,9 @@ const Dashboard = ({ user }) => {
       <div className="mt-12">
         <ShoppingListManager />
       </div>
+      <div className="mt-12">
+        <NotificationSettings />
+      </div>
     </div>
   );
 };
@@ -136,8 +141,6 @@ function AppContent() {
     const { user, login, logout, isInitialized } = useAuth();
     const { t, lang, toggleLanguage } = useLanguage();
     const { closeVault } = useVault();
-    const [showPrivacy, setShowPrivacy] = useState(false);
-    const [showTerms, setShowTerms] = useState(false);
 
     if (!isInitialized) return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -182,7 +185,7 @@ function AppContent() {
         <main className="min-h-[calc(100vh-4rem)]">
           <Routes>
             <Route path="/" element={
-              user ? <Navigate to="/dashboard" replace /> : <Home login={login} onShowPrivacy={() => setShowPrivacy(true)} onShowTerms={() => setShowTerms(true)} />
+              user ? <Navigate to="/dashboard" replace /> : <Home login={login} />
             } />
             <Route path="/dashboard" element={
               user ? <Dashboard user={user} /> : <Navigate to="/" replace />
@@ -197,6 +200,8 @@ function AppContent() {
               user ? <ActivityPage /> : <Navigate to="/" replace />
             } />
             <Route path="/security" element={<SecurityPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
           </Routes>
         </main>
 
@@ -206,15 +211,12 @@ function AppContent() {
               {t('builtWithSecurity')}
             </p>
             <div className="flex gap-4 text-sm font-medium text-muted-foreground">
-              <button onClick={() => setShowPrivacy(true)} className="hover:text-primary transition-colors cursor-pointer">{t('privacy')}</button>
-              <button onClick={() => setShowTerms(true)} className="hover:text-primary transition-colors cursor-pointer">{t('terms')}</button>
+              <Link to="/privacy" className="hover:text-primary transition-colors cursor-pointer">{t('privacy')}</Link>
+              <Link to="/terms" className="hover:text-primary transition-colors cursor-pointer">{t('terms')}</Link>
               <span className="text-xs opacity-50">v1.0.0</span>
             </div>
           </div>
         </footer>
-
-        {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
-        {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
       </div>
     </Router>
   );
