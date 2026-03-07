@@ -129,7 +129,7 @@ function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete }) {
 }
 
 export function ShoppingCartView() {
-    const { apiFetch } = useAuth();
+    const { apiFetch, user } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const { t, rtl } = useLanguage();
@@ -168,6 +168,22 @@ export function ShoppingCartView() {
             fetchMembers();
         }
     }, [listId]);
+
+    const fetchItems = async () => {
+        setFetching(true);
+        try {
+            const res = await apiFetch(`/api/shopping-items?list_id=${listId}`);
+            if (res.ok) {
+                const data = await res.json();
+                data.sort((a, b) => (a.position || 0) - (b.position || 0));
+                setItems(data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch items:", err);
+        } finally {
+            setFetching(false);
+        }
+    };
 
     const fetchMembers = async () => {
         try {
@@ -328,28 +344,6 @@ export function ShoppingCartView() {
         }
     };
 
-    const handleInvite = async (e) => {
-        e.preventDefault();
-        setInviteLoading(true);
-        try {
-            const res = await apiFetch(`/api/invites`, {
-                method: 'POST',
-                body: JSON.stringify({ list_id: listId, email: inviteEmail, list_type: 'shopping' })
-            });
-            if (res.ok) {
-                setInviteEmail('');
-                fetchMembers();
-            } else {
-                const data = await res.json();
-                alert(data.error || 'User not found or already invited.');
-            }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setInviteLoading(false);
-        }
-    };
-
     const handleDragEnd = async (event) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
@@ -443,11 +437,11 @@ export function ShoppingCartView() {
 
                                     {members.length > 0 && (
                                         <div className="space-y-2 mt-4">
-                                            <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Members</p>
+                                            <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2 text-start">Members</p>
                                             {members.map(member => (
                                                 <div key={member.id} className="flex items-center justify-between bg-background/50 p-2 rounded text-xs">
                                                     <span className="truncate mr-2">{member.email}</span>
-                                                    {isOwner && member.id !== user?.sub && (
+                                                    {isOwner && member.id !== user?.id && (
                                                         <Button 
                                                             variant="ghost" 
                                                             size="icon" 
