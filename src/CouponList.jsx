@@ -386,7 +386,7 @@ export function CouponList() {
                                             </Button>
                                         )}
                                         <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-destructive transition-colors" onClick={(e) => { e.stopPropagation(); markStatus(c.id, 'deleted'); }} title={t('delete')}>
-                                            <Icons.Logout className="w-5 h-5" />
+                                            <Icons.Trash className="w-5 h-5" />
                                         </Button>
                                     </div>
                                 </div>
