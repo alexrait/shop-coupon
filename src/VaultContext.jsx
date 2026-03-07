@@ -51,7 +51,18 @@ export function VaultProvider({ children }) {
     };
 
     return (
-        <VaultContext.Provider value={{ privateKey, publicKey, activeListKey, vaultId, vaultName, setKeys, setActiveListAesKey: setActiveListKey, clearKeys, updateVaultName }}>
+        <VaultContext.Provider value={{ 
+            privateKey, 
+            publicKey, 
+            activeListKey, 
+            vaultId, 
+            vaultName, 
+            setKeys, 
+            setActiveListAesKey: setActiveListKey, 
+            clearKeys, 
+            closeVault,
+            updateVaultName 
+        }}>
             {children}
         </VaultContext.Provider>
     );
