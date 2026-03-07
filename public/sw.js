@@ -1,4 +1,4 @@
-const CACHE_NAME = 'coupon-chest-v1.0.3';
+const CACHE_NAME = 'coupon-chest-v1.0.4';
 const urlsToCache = [
     '/',
     '/index.html',
@@ -30,8 +30,14 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
     const url = event.request.url;
-    // Strictly only cache internal app requests, ignore extensions and other schemes
-    if (!url.startsWith(self.location.origin) || !url.startsWith('http')) {
+    
+    // Only handle HTTP/S and same-origin requests
+    if (!url.startsWith('http') || !url.startsWith(self.location.origin)) {
+        return;
+    }
+
+    // IMPORTANT: Only cache GET requests. POST/PATCH/DELETE are not supported by Cache API.
+    if (event.request.method !== 'GET') {
         return;
     }
 
