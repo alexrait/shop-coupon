@@ -80,7 +80,10 @@ function AppContent() {
           <div className="container flex h-16 items-center justify-between px-4">
             <Link to="/" className="flex items-center gap-2 group transition-all">
               <Icons.Vault size={32} className="text-primary group-hover:scale-110 transition-transform" />
-              <span className="text-xl font-bold tracking-tight">{t('appName')}</span>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold tracking-tight">{t('appName')}</span>
+                <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Theme V4 Light Mode</span>
+              </div>
             </Link>
             <nav className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={toggleLanguage} className="font-bold">
