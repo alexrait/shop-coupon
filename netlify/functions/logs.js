@@ -1,4 +1,4 @@
-import { getDb } from './db.js';
+import { getDb, ensureDbReady } from './db.js';
 
 export const handler = async (event, context) => {
     const user = context.clientContext?.user;
@@ -11,7 +11,6 @@ export const handler = async (event, context) => {
     if (!listId) return { statusCode: 400, body: 'list_id required' };
 
     try {
-        const { ensureDbReady } = await import('./db.js');
         await ensureDbReady(sql, user);
 
         const logs = await sql`
@@ -25,6 +24,12 @@ export const handler = async (event, context) => {
         return { statusCode: 200, body: JSON.stringify(logs) };
     } catch (error) {
         console.error('Logs API error:', error);
-        return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+        return { 
+            statusCode: 500, 
+            body: JSON.stringify({ 
+                error: error.message,
+                stack: error.stack 
+            }) 
+        };
     }
 };

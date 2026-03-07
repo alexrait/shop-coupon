@@ -1,4 +1,4 @@
-import { getDb } from './db.js';
+import { getDb, ensureDbReady } from './db.js';
 
 export const handler = async (event, context) => {
     const user = context.clientContext?.user;
@@ -14,7 +14,6 @@ export const handler = async (event, context) => {
     }
 
     try {
-        const { ensureDbReady } = await import('./db.js');
         await ensureDbReady(sql, user);
 
         // Security check: ensure user has access to this list
@@ -130,6 +129,12 @@ export const handler = async (event, context) => {
 
     } catch (error) {
         console.error('Coupons API error:', error);
-        return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+        return { 
+            statusCode: 500, 
+            body: JSON.stringify({ 
+                error: error.message,
+                stack: error.stack 
+            }) 
+        };
     }
 };

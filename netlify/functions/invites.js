@@ -1,4 +1,4 @@
-import { getDb } from './db.js';
+import { getDb, ensureDbReady } from './db.js';
 
 export const handler = async (event, context) => {
     const user = context.clientContext?.user;
@@ -9,7 +9,6 @@ export const handler = async (event, context) => {
     const method = event.httpMethod;
 
     try {
-        const { ensureDbReady } = await import('./db.js');
         await ensureDbReady(sql, user);
 
         if (method === 'POST') {
@@ -56,6 +55,12 @@ export const handler = async (event, context) => {
 
     } catch (error) {
         console.error('Invites API error:', error);
-        return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+        return { 
+            statusCode: 500, 
+            body: JSON.stringify({ 
+                error: error.message,
+                stack: error.stack 
+            }) 
+        };
     }
 };

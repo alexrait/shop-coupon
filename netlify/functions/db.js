@@ -89,6 +89,25 @@ export const initSchema = async () => {
     );
   `;
 
+  // Migration: Ensure 'status', 'position', 'updated_at', and 'deleted_at' columns exist for existing tables
+  await sql`
+    DO $$ 
+    BEGIN 
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='shopcoupon' AND table_name='coupons' AND column_name='status') THEN
+        ALTER TABLE shopcoupon.coupons ADD COLUMN status TEXT NOT NULL DEFAULT 'active';
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='shopcoupon' AND table_name='coupons' AND column_name='position') THEN
+        ALTER TABLE shopcoupon.coupons ADD COLUMN position INTEGER DEFAULT 0;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='shopcoupon' AND table_name='coupons' AND column_name='updated_at') THEN
+        ALTER TABLE shopcoupon.coupons ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='shopcoupon' AND table_name='coupons' AND column_name='deleted_at') THEN
+        ALTER TABLE shopcoupon.coupons ADD COLUMN deleted_at TIMESTAMP WITH TIME ZONE;
+      END IF;
+    END $$;
+  `;
+
   await sql`
     CREATE TABLE IF NOT EXISTS shopcoupon.action_logs (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
