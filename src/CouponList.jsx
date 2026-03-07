@@ -162,6 +162,46 @@ export function CouponList() {
         }
     };
 
+    const isOwner = user?.id === ownerId;
+
+    const handleInvite = async (e) => {
+        e.preventDefault();
+        setInviteLoading(true);
+        try {
+            const res = await apiFetch(`/api/invites`, {
+                method: 'POST',
+                body: JSON.stringify({ list_id: vaultId, email: inviteEmail, list_type: 'vault' })
+            });
+            if (res.ok) {
+                setInviteEmail('');
+                fetchMembers();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'User not found or already invited.');
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setInviteLoading(false);
+        }
+    };
+
+    const handleRemoveMember = async (targetUserId) => {
+        if (!confirm("Remove this member?")) return;
+        try {
+            const res = await apiFetch(`/api/invites?list_id=${vaultId}&list_type=vault&user_id=${targetUserId}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                fetchMembers();
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const fetchCoupons = async () => {
+
     const isOwner = user?.sub === ownerId;
 
     const handleInvite = async (e) => {

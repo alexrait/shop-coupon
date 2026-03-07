@@ -218,7 +218,7 @@ export function ShoppingCartView() {
         }
     };
 
-    const isOwner = user?.sub === ownerId;
+    const isOwner = user?.id === ownerId;
 
     const fetchSuggestions = async (name) => {
         if (!name || name.length < 1) {
