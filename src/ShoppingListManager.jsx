@@ -186,10 +186,37 @@ export function ShoppingListManager() {
                                 <Icons.ShoppingCart size={20} />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h4 className="font-semibold text-sm truncate">{list.name}</h4>
-                                <p className="text-xs text-muted-foreground">
-                                    {new Date(list.created_at).toLocaleDateString()}
-                                </p>
+                                {editingListId === list.id ? (
+                                    <form 
+                                        onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); handleRename(list.id); }} 
+                                        className="flex items-center gap-2"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <Input 
+                                            size="sm"
+                                            value={editingName}
+                                            onChange={(e) => setEditingName(e.target.value)}
+                                            className="h-8 py-0 px-2 min-w-[150px]"
+                                            autoFocus
+                                        />
+                                        <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" type="submit">{t('save')}</Button>
+                                        <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" type="button" onClick={() => setEditingListId(null)}>{t('cancel')}</Button>
+                                    </form>
+                                ) : (
+                                    <>
+                                        <div className="flex items-center gap-2 group/name">
+                                            <h4 className="font-semibold text-sm truncate">{list.name}</h4>
+                                            <Icons.Edit 
+                                                size={12} 
+                                                className="opacity-0 group-hover/name:opacity-50 transition-opacity cursor-pointer" 
+                                                onClick={(e) => startRename(list, e)}
+                                            />
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            {new Date(list.created_at).toLocaleDateString()}
+                                        </p>
+                                    </>
+                                )}
                             </div>
                             <Button 
                                 variant="ghost" 
