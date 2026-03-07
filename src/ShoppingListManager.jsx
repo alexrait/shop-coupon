@@ -142,32 +142,34 @@ export function ShoppingListManager() {
                     </CardContent>
                 </Card>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-2">
                     {lists.map((list) => (
-                        <Card
+                        <div
                             key={list.id}
-                            className="group cursor-pointer hover:border-border transition-all hover:bg-muted/50 active:scale-95 text-center relative"
+                            className="group/item flex items-center gap-3 p-3 bg-card border border-border rounded-lg transition-all hover:bg-muted/30 shadow-sm cursor-pointer"
                             onClick={() => handleListClick(list)}
                         >
-                            <Button 
-                                variant="ghost" 
-                                size="icon"
-                                className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                                onClick={(e) => handleDeleteList(e, list.id)}
-                                title={t('delete')}
-                            >
-                                <Icons.Trash size={16} />
-                            </Button>
-                            <CardContent className="flex flex-col items-center justify-center p-8">
-                                <div className="p-4 rounded-full bg-secondary group-hover:bg-accent transition-colors mb-4">
-                                    <Icons.ShoppingCart size={40} className="text-primary" />
-                                </div>
-                                <h4 className="font-semibold text-lg">{list.name}</h4>
-                                <p className="text-xs text-muted-foreground mt-1">
+                            <div className="p-1 text-muted-foreground">
+                                <Icons.ShoppingCart size={20} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-sm truncate">{list.name}</h4>
+                                <p className="text-xs text-muted-foreground">
                                     {new Date(list.created_at).toLocaleDateString()}
                                 </p>
-                            </CardContent>
-                        </Card>
+                            </div>
+                            <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                    onClick={(e) => handleDeleteList(e, list.id)}
+                                    title={t('delete')}
+                                >
+                                    <Icons.Trash size={16} />
+                                </Button>
+                            </div>
+                        </div>
                     ))}
                 </div>
             )}

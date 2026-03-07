@@ -243,20 +243,34 @@ export function VaultManager({ user }) {
                     </CardContent>
                 </Card>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-2">
                     {vaults.map((vault) => (
-                        <Card
+                        <div
                             key={vault.id}
-                            className="group cursor-pointer hover:border-border transition-all hover:bg-muted/50 active:scale-95 text-center"
+                            className="group/item flex items-center gap-3 p-3 bg-card border border-border rounded-lg transition-all hover:bg-muted/30 shadow-sm cursor-pointer"
                             onClick={() => handleVaultClick(vault)}
                         >
-                            <CardContent className="flex flex-col items-center justify-center p-8">
-                                <div className="p-4 rounded-full bg-secondary group-hover:bg-accent transition-colors mb-4">
-                                    <Icons.Vault size={40} className="text-primary" />
-                                </div>
-                                <h4 className="font-semibold text-lg">{vault.name}</h4>
-                            </CardContent>
-                        </Card>
+                            <div className="p-1 text-muted-foreground">
+                                <Icons.Vault size={20} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-sm truncate">{vault.name}</h4>
+                                <p className="text-xs text-muted-foreground">
+                                    {new Date(vault.created_at).toLocaleDateString()}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                    onClick={(e) => { e.stopPropagation(); }}
+                                    title={t('delete')}
+                                >
+                                    <Icons.Trash size={16} />
+                                </Button>
+                            </div>
+                        </div>
                     ))}
                 </div>
             )}

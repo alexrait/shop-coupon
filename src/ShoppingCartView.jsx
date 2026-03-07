@@ -146,6 +146,9 @@ export function ShoppingCartView() {
     const [note, setNote] = useState('');
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [isInviting, setIsInviting] = useState(false);
+    const [inviteEmail, setInviteEmail] = useState('');
+    const [inviteLoading, setInviteLoading] = useState(false);
 
     const nameInputRef = useRef(null);
 
@@ -285,6 +288,29 @@ export function ShoppingCartView() {
             await fetchItems();
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const handleInvite = async (e) => {
+        e.preventDefault();
+        setInviteLoading(true);
+        try {
+            const res = await apiFetch(`/api/invites`, {
+                method: 'POST',
+                body: JSON.stringify({ list_id: listId, email: inviteEmail, list_type: 'shopping' })
+            });
+            if (res.ok) {
+                alert('Invite sent!');
+                setInviteEmail('');
+                setIsInviting(false);
+            } else {
+                const data = await res.json();
+                alert(data.error || 'User not found or already invited.');
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setInviteLoading(false);
         }
     };
 
