@@ -86,6 +86,16 @@ function SortableCouponItem({ coupon, idx, rtl, t, startEdit, markStatus }) {
                                 {t('activityFeed')}
                             </Badge>
                         )}
+                        {coupon.expiryDate && coupon.status !== 'used' && (() => {
+                            const expiry = new Date(coupon.expiryDate);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const diff = expiry - today;
+                            const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                            if (days < 0) return <Badge variant="destructive" className="text-[8px] uppercase py-0 px-1 shrink-0">{t('expired')}</Badge>;
+                            if (days <= 7) return <Badge className="text-[8px] uppercase py-0 px-1 shrink-0 bg-orange-500 hover:bg-orange-600 border-none">{t('expiresIn', { days })}</Badge>;
+                            return <Badge variant="outline" className="text-[8px] uppercase py-0 px-1 shrink-0 opacity-50">{t('expiresIn', { days })}</Badge>;
+                        })()}
                     </div>
                     <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
                         <span className="flex items-center gap-1"><Icons.Lock size={10} /> {t('viewCode')}</span>
@@ -153,6 +163,7 @@ export function CouponList() {
     const [title, setTitle] = useState('');
     const [code, setCode] = useState('');
     const [value, setValue] = useState('');
+    const [expiryDate, setExpiryDate] = useState('');
     const [imageBase64, setImageBase64] = useState('');
     const fileInputRef = useRef(null);
 
@@ -178,7 +189,7 @@ export function CouponList() {
         if (!isDialogOpen) {
             // Reset form when dialog closes
             setEditingCoupon(null);
-            setTitle(''); setCode(''); setValue(''); setImageBase64('');
+            setTitle(''); setCode(''); setValue(''); setExpiryDate(''); setImageBase64('');
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     }, [isDialogOpen]);
@@ -226,13 +237,23 @@ export function CouponList() {
         }
     };
 
+    const expiringSoonCount = coupons.filter(c => {
+        if (!c.expiryDate || c.status === 'used' || c.status === 'deleted') return false;
+        const expiry = new Date(c.expiryDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diff = expiry - today;
+        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        return days >= 0 && days <= 7;
+    }).length;
+
     const handleSaveCoupon = async (e) => {
         if (e) e.preventDefault();
         if (!publicKey) return alert("No active vault keys found.");
 
         setLoading(true);
         try {
-            const payload = { title, code, value, imageBase64 };
+            const payload = { title, code, value, imageBase64, expiryDate };
             const payloadString = JSON.stringify(payload);
 
             const aesKey = await cryptoUtils.generateAESKey();
@@ -261,7 +282,7 @@ export function CouponList() {
                 await fetchCoupons();
                 if (!editingCoupon) {
                     // Reset for next multi-add
-                    setTitle(''); setCode(''); setValue(''); setImageBase64('');
+                    setTitle(''); setCode(''); setValue(''); setExpiryDate(''); setImageBase64('');
                     if (fileInputRef.current) fileInputRef.current.value = '';
                 } else {
                     setIsDialogOpen(false);
@@ -282,6 +303,7 @@ export function CouponList() {
         setTitle(c.title || '');
         setCode(c.code || '');
         setValue(c.value || '');
+        setExpiryDate(c.expiryDate || '');
         setImageBase64(c.imageBase64 || '');
         setIsDialogOpen(true);
     };
@@ -433,6 +455,13 @@ export function CouponList() {
                 <CardContent>
                     <Separator className="mb-6 opacity-40" />
 
+                    {expiringSoonCount > 0 && (
+                        <div className="mb-6 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg flex items-center gap-3 text-orange-500 animate-pulse">
+                            <Icons.Shield size={18} />
+                            <p className="text-sm font-semibold">{t('expirationWarning', { count: expiringSoonCount })}</p>
+                        </div>
+                    )}
+
                     {isInviting && (
                         <Card className="mb-6 border-border bg-muted/30 animate-in slide-in-from-right-4 duration-300">
                             <CardHeader className="py-4 text-start">
@@ -545,6 +574,15 @@ export function CouponList() {
                                             }
                                         }} className="cursor-pointer bg-background/50 text-[10px] file:text-primary file:font-bold h-9" />
                                     </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">{t('expirationDate')}</Label>
+                                    <Input 
+                                        type="date" 
+                                        value={expiryDate} 
+                                        onChange={e => setExpiryDate(e.target.value)} 
+                                        className="bg-background/50 h-9" 
+                                    />
                                 </div>
                             </div>
                             

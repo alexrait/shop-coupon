@@ -63,6 +63,10 @@ const translations = {
         feature4: "Full activity history so nothing gets lost",
         save: "Save",
         rename: "Rename Vault",
+        expirationDate: "Expiration Date (Optional)",
+        expiresIn: "Expires in {days}d",
+        expired: "Expired",
+        expirationWarning: "{count} coupons are expiring soon!",
     },
     he: {
         appName: "ארגז הקופונים",
@@ -126,6 +130,10 @@ const translations = {
         feature4: "היסטוריית פעילות מלאה כדי שלא תפספס דבר",
         save: "שמירה",
         rename: "שינוי שם הכספת",
+        expirationDate: "תאריך תפוגה (אופציונלי)",
+        expiresIn: "פג בעוד {days} ימים",
+        expired: "פג תוקף",
+        expirationWarning: "{count} קופונים עומדים לפוג בקרוב!",
     }
 };
 
