@@ -146,7 +146,7 @@ export function ShoppingListManager() {
                     {lists.map((list) => (
                         <div
                             key={list.id}
-                            className="group/item flex items-center gap-3 p-3 bg-card border border-border rounded-lg transition-all hover:bg-muted/30 shadow-sm cursor-pointer"
+                            className="group flex items-center gap-3 p-3 bg-card border border-border rounded-lg transition-all hover:bg-muted/30 shadow-sm cursor-pointer"
                             onClick={() => handleListClick(list)}
                         >
                             <div className="p-1 text-muted-foreground">
@@ -158,17 +158,15 @@ export function ShoppingListManager() {
                                     {new Date(list.created_at).toLocaleDateString()}
                                 </p>
                             </div>
-                            <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                    onClick={(e) => handleDeleteList(e, list.id)}
-                                    title={t('delete')}
-                                >
-                                    <Icons.Trash size={16} />
-                                </Button>
-                            </div>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive touch-manipulation"
+                                onClick={(e) => { e.stopPropagation(); handleDeleteList(e, list.id); }}
+                                title={t('delete')}
+                            >
+                                <Icons.Trash size={16} />
+                            </Button>
                         </div>
                     ))}
                 </div>

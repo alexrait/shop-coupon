@@ -208,6 +208,7 @@ function AppContent() {
             <div className="flex gap-4 text-sm font-medium text-muted-foreground">
               <button onClick={() => setShowPrivacy(true)} className="hover:text-primary transition-colors cursor-pointer">{t('privacy')}</button>
               <button onClick={() => setShowTerms(true)} className="hover:text-primary transition-colors cursor-pointer">{t('terms')}</button>
+              <span className="text-xs opacity-50">v1.0.0</span>
             </div>
           </div>
         </footer>

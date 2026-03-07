@@ -63,9 +63,10 @@ function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete }) {
             <div 
                 {...attributes} 
                 {...listeners} 
-                className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-primary transition-colors"
+                className="cursor-grab active:cursor-grabbing p-2 -ml-2 text-muted-foreground hover:text-primary transition-colors touch-manipulation"
+                title="Drag to reorder"
             >
-                <Icons.Grip size={16} />
+                <Icons.Grip size={20} />
             </div>
 
             <div className="flex-1 min-w-0" onClick={() => onEdit(item)}>
