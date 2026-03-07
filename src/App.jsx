@@ -5,6 +5,8 @@ import { VaultProvider, useVault } from './VaultContext';
 import { VaultManager } from './VaultManager';
 import { CouponList } from './CouponList';
 import { CouponHistory } from './CouponHistory';
+import { ShoppingListManager } from './ShoppingListManager';
+import { ShoppingCartView } from './ShoppingCartView';
 import { Icons } from './components/icons';
 import { Button } from './components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card';
@@ -108,6 +110,9 @@ const Dashboard = ({ user }) => {
         <p className="text-muted-foreground">{t('tagline')}</p>
       </div>
       <VaultManager user={user} />
+      <div className="mt-12">
+        <ShoppingListManager />
+      </div>
     </div>
   );
 };
@@ -186,6 +191,9 @@ function AppContent() {
             } />
             <Route path="/vault" element={
               user ? <VaultView user={user} /> : <Navigate to="/" replace />
+            } />
+            <Route path="/shopping-list/:listId" element={
+              user ? <ShoppingCartView /> : <Navigate to="/" replace />
             } />
             <Route path="/security" element={<SecurityPage />} />
           </Routes>

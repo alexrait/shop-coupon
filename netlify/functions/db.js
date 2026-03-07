@@ -54,6 +54,43 @@ export const runMigrations = async (sql) => {
       END IF;
     END $$;
   `;
+
+  // Migration: Ensure shopping_lists and shopping_items tables exist
+  await sql`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='shopcoupon' AND table_name='shopping_lists') THEN
+        CREATE TABLE shopcoupon.shopping_lists (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          owner_id UUID REFERENCES shopcoupon.users(id),
+          name TEXT NOT NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+      END IF;
+      
+      IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='shopcoupon' AND table_name='shopping_list_members') THEN
+        CREATE TABLE shopcoupon.shopping_list_members (
+          list_id UUID REFERENCES shopcoupon.shopping_lists(id) ON DELETE CASCADE,
+          user_id UUID REFERENCES shopcoupon.users(id) ON DELETE CASCADE,
+          PRIMARY KEY (list_id, user_id)
+        );
+      END IF;
+
+      IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='shopcoupon' AND table_name='shopping_items') THEN
+        CREATE TABLE shopcoupon.shopping_items (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          list_id UUID REFERENCES shopcoupon.shopping_lists(id) ON DELETE CASCADE,
+          encrypted_name TEXT NOT NULL,
+          quantity INTEGER DEFAULT 1,
+          status TEXT NOT NULL DEFAULT 'pending',
+          note TEXT,
+          position INTEGER DEFAULT 0,
+          bought_at TIMESTAMP WITH TIME ZONE,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+      END IF;
+    END $$;
+  `;
 };
 
 export const initSchema = async () => {
