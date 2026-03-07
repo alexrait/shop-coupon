@@ -438,10 +438,10 @@ export function CouponList() {
                         </div>
                         <div className="flex gap-2">
                             <Button variant="outline" size="sm" onClick={() => setIsInviting(!isInviting)}>
-                                <Icons.UserPlus size={16} className={rtl ? 'ml-2' : 'mr-2'} /> <span className="hidden sm:inline">{t('share')}</span>
+                                <Icons.UserPlus size={16} className={rtl ? 'ml-2' : 'mr-2'} /> {t('share')}
                             </Button>
                             <Button size="sm" onClick={() => setIsDialogOpen(true)}>
-                                <Icons.Add size={16} className={rtl ? 'ml-2' : 'mr-2'} /> <span className="hidden sm:inline">{t('add')}</span>
+                                <Icons.Add size={16} className={rtl ? 'ml-2' : 'mr-2'} /> {t('add')}
                             </Button>
                         </div>
                     </div>
