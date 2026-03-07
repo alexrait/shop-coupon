@@ -18,17 +18,41 @@ export const ensureDbReady = async (sql, user) => {
   
   // 1. Check if schema exists, if not, init it
   try {
-    await sql`SELECT 1 FROM shopcoupon.users LIMIT 1`;
+    const [row] = await sql`SELECT 1 FROM shopcoupon.users LIMIT 1`;
   } catch (e) {
     console.log("Schema missing, initializing...");
     await initSchema();
   }
 
-  // 2. Ensure current user exists in our users table
+  // 2. Run migrations (ensure columns exist)
+  await runMigrations(sql);
+
+  // 3. Ensure current user exists in our users table
   await sql`
     INSERT INTO shopcoupon.users (id, email)
     VALUES (${user.sub}, ${user.email})
     ON CONFLICT (id) DO NOTHING
+  `;
+};
+
+export const runMigrations = async (sql) => {
+  // Migration: Ensure 'status', 'position', 'updated_at', and 'deleted_at' columns exist for existing tables
+  await sql`
+    DO $$ 
+    BEGIN 
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='shopcoupon' AND table_name='coupons' AND column_name='status') THEN
+        ALTER TABLE shopcoupon.coupons ADD COLUMN status TEXT NOT NULL DEFAULT 'active';
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='shopcoupon' AND table_name='coupons' AND column_name='position') THEN
+        ALTER TABLE shopcoupon.coupons ADD COLUMN position INTEGER DEFAULT 0;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='shopcoupon' AND table_name='coupons' AND column_name='updated_at') THEN
+        ALTER TABLE shopcoupon.coupons ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='shopcoupon' AND table_name='coupons' AND column_name='deleted_at') THEN
+        ALTER TABLE shopcoupon.coupons ADD COLUMN deleted_at TIMESTAMP WITH TIME ZONE;
+      END IF;
+    END $$;
   `;
 };
 
@@ -87,25 +111,6 @@ export const initSchema = async () => {
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
       deleted_at TIMESTAMP WITH TIME ZONE
     );
-  `;
-
-  // Migration: Ensure 'status', 'position', 'updated_at', and 'deleted_at' columns exist for existing tables
-  await sql`
-    DO $$ 
-    BEGIN 
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='shopcoupon' AND table_name='coupons' AND column_name='status') THEN
-        ALTER TABLE shopcoupon.coupons ADD COLUMN status TEXT NOT NULL DEFAULT 'active';
-      END IF;
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='shopcoupon' AND table_name='coupons' AND column_name='position') THEN
-        ALTER TABLE shopcoupon.coupons ADD COLUMN position INTEGER DEFAULT 0;
-      END IF;
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='shopcoupon' AND table_name='coupons' AND column_name='updated_at') THEN
-        ALTER TABLE shopcoupon.coupons ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
-      END IF;
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='shopcoupon' AND table_name='coupons' AND column_name='deleted_at') THEN
-        ALTER TABLE shopcoupon.coupons ADD COLUMN deleted_at TIMESTAMP WITH TIME ZONE;
-      END IF;
-    END $$;
   `;
 
   await sql`
