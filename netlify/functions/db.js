@@ -103,6 +103,11 @@ export const runMigrations = async (sql) => {
           ALTER TABLE shopcoupon.push_subscriptions ADD COLUMN settings JSONB DEFAULT '{"newItem": true, "removeItem": true, "updateItem": true}';
         END IF;
       END IF;
+
+      -- Add unique constraint for push subscriptions to support ON CONFLICT
+      IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'shopcoupon' AND tablename = 'push_subscriptions' AND indexname = 'push_sub_user_endpoint_idx') THEN
+        CREATE UNIQUE INDEX push_sub_user_endpoint_idx ON shopcoupon.push_subscriptions (user_id, (subscription->>'endpoint'));
+      END IF;
     END $$;
   `;
 };

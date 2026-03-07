@@ -95,7 +95,7 @@ export const handler = async (event, context) => {
                 await sql`
                     INSERT INTO shopcoupon.push_subscriptions (user_id, subscription, settings)
                     VALUES (${userId}, ${JSON.stringify(subscription)}, ${JSON.stringify(settings || { newItem: true, removeItem: true, updateItem: true })})
-                    ON CONFLICT (user_id, (subscription->>'endpoint')) DO UPDATE 
+                    ON CONFLICT (user_id, ((subscription->>'endpoint'))) DO UPDATE 
                     SET subscription = EXCLUDED.subscription, settings = COALESCE(EXCLUDED.settings, push_subscriptions.settings)
                 `;
             } else if (settings) {
