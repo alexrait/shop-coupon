@@ -27,6 +27,10 @@ export function VaultProvider({ children }) {
         }
     };
 
+    const updateVaultName = (newName) => {
+        setVaultName(newName);
+    };
+
     const clearKeys = async () => {
         if (user?.id && vaultId) {
             await persistenceUtils.removeKey(vaultId, user.id);
@@ -39,7 +43,7 @@ export function VaultProvider({ children }) {
     };
 
     return (
-        <VaultContext.Provider value={{ privateKey, publicKey, activeListKey, vaultId, vaultName, setKeys, setActiveListAesKey: setActiveListKey, clearKeys }}>
+        <VaultContext.Provider value={{ privateKey, publicKey, activeListKey, vaultId, vaultName, setKeys, setActiveListAesKey: setActiveListKey, clearKeys, updateVaultName }}>
             {children}
         </VaultContext.Provider>
     );

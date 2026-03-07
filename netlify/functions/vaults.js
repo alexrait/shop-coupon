@@ -43,6 +43,29 @@ export const handler = async (event, context) => {
             };
         }
 
+        if (method === 'PATCH') {
+            const listId = event.queryStringParameters?.list_id;
+            const body = JSON.parse(event.body);
+            const { name } = body;
+
+            if (!listId || !name) return { statusCode: 400, body: 'list_id and name required' };
+
+            // Update only if owner
+            const [updated] = await sql`
+                UPDATE shopcoupon.lists 
+                SET name = ${name}
+                WHERE id = ${listId} AND owner_id = ${userId}
+                RETURNING *
+            `;
+
+            if (!updated) return { statusCode: 403, body: 'Forbidden or not found' };
+
+            return {
+                statusCode: 200,
+                body: JSON.stringify(updated)
+            };
+        }
+
         return { statusCode: 405, body: 'Method Not Allowed' };
 
     } catch (error) {

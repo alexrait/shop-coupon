@@ -62,6 +62,7 @@ const translations = {
         feature3: "Share vault access with trusted team members",
         feature4: "Full activity history so nothing gets lost",
         save: "Save",
+        rename: "Rename Vault",
     },
     he: {
         appName: "ארגז הקופונים",
@@ -124,6 +125,7 @@ const translations = {
         feature3: "שתף גישה לכספת עם חברי צוות מהימנים",
         feature4: "היסטוריית פעילות מלאה כדי שלא תפספס דבר",
         save: "שמירה",
+        rename: "שינוי שם הכספת",
     }
 };
 

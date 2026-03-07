@@ -13,7 +13,7 @@ import { Separator } from './components/ui/separator';
 import { useLanguage } from './LanguageContext';
 
 export function CouponList() {
-    const { privateKey, publicKey, vaultId, vaultName } = useVault();
+    const { privateKey, publicKey, vaultId, vaultName, updateVaultName } = useVault();
     const { apiFetch } = useAuth();
     const { t, rtl } = useLanguage();
 
@@ -23,6 +23,9 @@ export function CouponList() {
     const [isInviting, setIsInviting] = useState(false);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
+
+    const [isRenamingVault, setIsRenamingVault] = useState(false);
+    const [newVaultName, setNewVaultName] = useState(vaultName || '');
 
     // Form State (Shared between Add and Edit)
     const [title, setTitle] = useState('');
@@ -232,13 +235,50 @@ export function CouponList() {
         }
     };
 
+    const handleRenameVault = async (e) => {
+        if (e) e.preventDefault();
+        if (!newVaultName.trim()) return;
+        try {
+            const res = await apiFetch(`/api/vaults?list_id=${vaultId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ name: newVaultName })
+            });
+            if (res.ok) {
+                updateVaultName(newVaultName);
+                setIsRenamingVault(false);
+            } else {
+                alert("Failed to rename vault. Only the owner can rename.");
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     return (
         <Card className="shadow-xl bg-card border-border">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div className="space-y-1">
-                    <CardTitle className="flex items-center gap-2">
-                        <Icons.Cart size={24} className="text-primary" /> {vaultName}
-                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                        <Icons.Cart size={24} className="text-primary shrink-0" />
+                        {isRenamingVault ? (
+                            <form onSubmit={handleRenameVault} className="flex items-center gap-2">
+                                <Input 
+                                    size="sm"
+                                    value={newVaultName}
+                                    onChange={(e) => setNewVaultName(e.target.value)}
+                                    className="h-8 py-0 px-2 min-w-[150px]"
+                                    autoFocus
+                                />
+                                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" type="submit">{t('save')}</Button>
+                                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" type="button" onClick={() => { setIsRenamingVault(false); setNewVaultName(vaultName); }}>{t('cancel')}</Button>
+                            </form>
+                        ) : (
+                            <CardTitle className="group/title flex items-center gap-2 cursor-pointer" onClick={() => { setIsRenamingVault(true); setNewVaultName(vaultName); }}>
+                                {vaultName}
+                                <Icons.Edit size={14} className="opacity-0 group-hover/title:opacity-50 transition-opacity" />
+                            </CardTitle>
+                        )}
+                    </div>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Icons.Vault size={12} /> {t('id')}: {vaultId}
                     </p>
