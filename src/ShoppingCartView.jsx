@@ -365,31 +365,33 @@ export function ShoppingCartView() {
     return (
         <>
             <Card className="shadow-xl bg-card border-border">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <div className="flex items-center gap-4">
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all shrink-0 border border-transparent hover:border-primary/20" 
-                            onClick={() => navigate('/dashboard')}
-                            title={t('back')}
-                        >
-                            {rtl ? <Icons.ChevronRight size={24} /> : <Icons.ChevronLeft size={24} />}
-                        </Button>
-                        <div className="space-y-1">
-                            <CardTitle className="flex items-center gap-2">
-                                <Icons.ShoppingCart size={24} className="text-primary shrink-0" />
-                                {listName}
-                            </CardTitle>
+                <CardHeader className="pb-2">
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-4">
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all shrink-0 border border-transparent hover:border-primary/20" 
+                                onClick={() => navigate('/dashboard')}
+                                title={t('back')}
+                            >
+                                {rtl ? <Icons.ChevronRight size={24} /> : <Icons.ChevronLeft size={24} />}
+                            </Button>
+                            <div className="space-y-1">
+                                <CardTitle className="flex items-center gap-2">
+                                    <Icons.ShoppingCart size={24} className="text-primary shrink-0" />
+                                    {listName}
+                                </CardTitle>
+                            </div>
                         </div>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setIsInviting(!isInviting)}>
-                            <Icons.UserPlus size={16} className={rtl ? 'ml-2' : 'mr-2'} /> {t('share')}
-                        </Button>
-                        <Button size="sm" onClick={() => setIsDialogOpen(true)}>
-                            <Icons.Add size={16} className={rtl ? 'ml-2' : 'mr-2'} /> {t('addItem')}
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setIsInviting(!isInviting)}>
+                                <Icons.UserPlus size={16} className={rtl ? 'ml-2' : 'mr-2'} /> <span className="hidden sm:inline">{t('share')}</span>
+                            </Button>
+                            <Button size="sm" onClick={() => setIsDialogOpen(true)}>
+                                <Icons.Add size={16} className={rtl ? 'ml-2' : 'mr-2'} /> <span className="hidden sm:inline">{t('addItem')}</span>
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
