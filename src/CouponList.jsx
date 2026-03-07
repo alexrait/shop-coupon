@@ -137,68 +137,68 @@ export function CouponList() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingCoupon, setEditingCoupon] = useState(null);
     const [isInviting, setIsInviting] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [fetching, setFetching] = useState(true);
-
-    const [isRenamingVault, setIsRenamingVault] = useState(false);
-    const [newVaultName, setNewVaultName] = useState(vaultName || '');
-
-    // Form State
-    const [title, setTitle] = useState('');
-    const [code, setCode] = useState('');
-    const [value, setValue] = useState('');
-    const [expiryDate, setExpiryDate] = useState('');
-    const [imageBase64, setImageBase64] = useState('');
-    const fileInputRef = useRef(null);
-
-    // Invite State
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteLoading, setInviteLoading] = useState(false);
-
-    // DnD Sensors
-    const sensors = useSensors(
-        useSensor(PointerSensor),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
-    );
+    const [members, setMembers] = useState([]);
+    const [ownerId, setOwnerId] = useState(null);
 
     useEffect(() => {
         if (vaultId) {
             fetchCoupons();
+            fetchMembers();
         }
-    }, [vaultId, privateKey]);
+    }, [vaultId]);
 
-    useEffect(() => {
-        if (!isDialogOpen) {
-            // Reset form when dialog closes
-            setEditingCoupon(null);
-            setTitle(''); setCode(''); setValue(''); setExpiryDate(''); setImageBase64('');
-            if (fileInputRef.current) fileInputRef.current.value = '';
-        }
-    }, [isDialogOpen]);
-
-    const fetchCoupons = async () => {
-        if (!privateKey) return;
-        setFetching(true);
+    const fetchMembers = async () => {
         try {
-            const res = await apiFetch(`/api/coupons?list_id=${vaultId}`);
+            const res = await apiFetch(`/api/invites?list_id=${vaultId}&list_type=vault`);
             if (res.ok) {
                 const data = await res.json();
-                const decrypted = await Promise.all(data.map(async (row) => {
-                    const encrypted = row.encrypted_payload;
-                    try {
-                        const aesKeyBase64 = await cryptoUtils.decryptRSA(encrypted.encrypted_aes_key, privateKey);
-                        const aesKey = await cryptoUtils.importAESKey(aesKeyBase64);
-                        const payloadStr = await cryptoUtils.decryptAES(encrypted.encrypted_data, encrypted.iv, aesKey);
-                        const payload = JSON.parse(payloadStr);
-                        return {
-                            ...payload,
-                            id: row.id,
-                            created_at: row.created_at,
-                            status: row.status,
-                            position: row.position
-                        };
+                setMembers(data.members || []);
+                setOwnerId(data.owner_id);
+            }
+        } catch (err) {
+            console.error("Failed to fetch members:", err);
+        }
+    };
+
+    const isOwner = user?.sub === ownerId;
+
+    const handleInvite = async (e) => {
+        e.preventDefault();
+        setInviteLoading(true);
+        try {
+            const res = await apiFetch(`/api/invites`, {
+                method: 'POST',
+                body: JSON.stringify({ list_id: vaultId, email: inviteEmail, list_type: 'vault' })
+            });
+            if (res.ok) {
+                setInviteEmail('');
+                fetchMembers();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'User not found or already invited.');
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setInviteLoading(false);
+        }
+    };
+
+    const handleRemoveMember = async (targetUserId) => {
+        if (!confirm("Remove this member?")) return;
+        try {
+            const res = await apiFetch(`/api/invites?list_id=${vaultId}&list_type=vault&user_id=${targetUserId}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                fetchMembers();
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
                     } catch (err) {
                         console.error("Failed to decrypt coupon:", err);
                         return { 
@@ -463,22 +463,44 @@ export function CouponList() {
                             </CardHeader>
                             <form onSubmit={handleInvite}>
                                 <CardContent className="py-0 pb-4">
-                                    <Input
-                                        type="email"
-                                        required
-                                        value={inviteEmail}
-                                        onChange={e => setInviteEmail(e.target.value)}
-                                        placeholder={t('enterEmail')}
-                                        className="text-start bg-background"
-                                    />
+                                    <div className="flex gap-2 mb-4">
+                                        <Input
+                                            type="email"
+                                            required
+                                            value={inviteEmail}
+                                            onChange={e => setInviteEmail(e.target.value)}
+                                            placeholder={t('enterEmail')}
+                                            className="text-start bg-background"
+                                        />
+                                        <Button size="sm" disabled={inviteLoading || !isOwner}>
+                                            {inviteLoading ? <Loader2 className="animate-spin" size={14} /> : <Icons.Add size={14} />}
+                                        </Button>
+                                    </div>
+
+                                    {members.length > 0 && (
+                                        <div className="space-y-2 mt-4">
+                                            <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Members</p>
+                                            {members.map(member => (
+                                                <div key={member.id} className="flex items-center justify-between bg-background/50 p-2 rounded text-xs">
+                                                    <span className="truncate mr-2">{member.email}</span>
+                                                    {isOwner && member.id !== user?.sub && (
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            className="h-6 w-6 text-destructive" 
+                                                            onClick={() => handleRemoveMember(member.id)}
+                                                        >
+                                                            <Icons.Trash size={12} />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </CardContent>
                                 <CardFooter className="flex gap-2 py-4 pt-0">
-                                    <Button size="sm" className="w-full" disabled={inviteLoading}>
-                                        {inviteLoading ? <Loader2 className="animate-spin mr-2 ml-2" size={14} /> : <Icons.Share size={14} className={rtl ? 'ml-2' : 'mr-2'} />}
-                                        {t('sendAccess')}
-                                    </Button>
-                                    <Button size="sm" variant="ghost" type="button" onClick={() => setIsInviting(false)}>
-                                        <Icons.Logout size={14} className={rtl ? 'rotate-180' : ''} />
+                                    <Button size="sm" variant="ghost" className="w-full" type="button" onClick={() => setIsInviting(false)}>
+                                        {t('cancel')}
                                     </Button>
                                 </CardFooter>
                             </form>

@@ -150,6 +150,8 @@ export function ShoppingCartView() {
     const [isInviting, setIsInviting] = useState(false);
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteLoading, setInviteLoading] = useState(false);
+    const [members, setMembers] = useState([]);
+    const [ownerId, setOwnerId] = useState(null);
 
     const nameInputRef = useRef(null);
 
@@ -163,34 +165,60 @@ export function ShoppingCartView() {
     useEffect(() => {
         if (listId) {
             fetchItems();
+            fetchMembers();
         }
     }, [listId]);
 
-    useEffect(() => {
-        if (!isDialogOpen) {
-            setEditingItem(null);
-            setItemName('');
-            setQuantity(1);
-            setNote('');
-            setSuggestions([]);
-        }
-    }, [isDialogOpen]);
-
-    const fetchItems = async () => {
-        setFetching(true);
+    const fetchMembers = async () => {
         try {
-            const res = await apiFetch(`/api/shopping-items?list_id=${listId}`);
+            const res = await apiFetch(`/api/invites?list_id=${listId}&list_type=shopping`);
             if (res.ok) {
                 const data = await res.json();
-                data.sort((a, b) => (a.position || 0) - (b.position || 0));
-                setItems(data);
+                setMembers(data.members || []);
+                setOwnerId(data.owner_id);
             }
         } catch (err) {
-            console.error("Failed to fetch items:", err);
-        } finally {
-            setFetching(false);
+            console.error("Failed to fetch members:", err);
         }
     };
+
+    const handleInvite = async (e) => {
+        e.preventDefault();
+        setInviteLoading(true);
+        try {
+            const res = await apiFetch(`/api/invites`, {
+                method: 'POST',
+                body: JSON.stringify({ list_id: listId, email: inviteEmail, list_type: 'shopping' })
+            });
+            if (res.ok) {
+                setInviteEmail('');
+                fetchMembers();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'User not found or already invited.');
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setInviteLoading(false);
+        }
+    };
+
+    const handleRemoveMember = async (targetUserId) => {
+        if (!confirm("Remove this member?")) return;
+        try {
+            const res = await apiFetch(`/api/invites?list_id=${listId}&list_type=shopping&user_id=${targetUserId}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                fetchMembers();
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const isOwner = user?.sub === ownerId;
 
     const fetchSuggestions = async (name) => {
         if (!name || name.length < 1) {
@@ -400,22 +428,44 @@ export function ShoppingCartView() {
                             </CardHeader>
                             <form onSubmit={handleInvite}>
                                 <CardContent className="py-0 pb-4">
-                                    <Input
-                                        type="email"
-                                        required
-                                        value={inviteEmail}
-                                        onChange={e => setInviteEmail(e.target.value)}
-                                        placeholder={t('enterEmail')}
-                                        className="text-start bg-background"
-                                    />
+                                    <div className="flex gap-2 mb-4">
+                                        <Input
+                                            type="email"
+                                            required
+                                            value={inviteEmail}
+                                            onChange={e => setInviteEmail(e.target.value)}
+                                            placeholder={t('enterEmail')}
+                                            className="text-start bg-background"
+                                        />
+                                        <Button size="sm" disabled={inviteLoading || !isOwner}>
+                                            {inviteLoading ? <Loader2 className="animate-spin" size={14} /> : <Icons.Add size={14} />}
+                                        </Button>
+                                    </div>
+
+                                    {members.length > 0 && (
+                                        <div className="space-y-2 mt-4">
+                                            <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Members</p>
+                                            {members.map(member => (
+                                                <div key={member.id} className="flex items-center justify-between bg-background/50 p-2 rounded text-xs">
+                                                    <span className="truncate mr-2">{member.email}</span>
+                                                    {isOwner && member.id !== user?.sub && (
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            className="h-6 w-6 text-destructive" 
+                                                            onClick={() => handleRemoveMember(member.id)}
+                                                        >
+                                                            <Icons.Trash size={12} />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </CardContent>
                                 <CardFooter className="flex gap-2 py-4 pt-0">
-                                    <Button size="sm" className="w-full" disabled={inviteLoading}>
-                                        {inviteLoading ? <Loader2 className="animate-spin mr-2 ml-2" size={14} /> : <Icons.Share size={14} className={rtl ? 'ml-2' : 'mr-2'} />}
-                                        {t('sendAccess')}
-                                    </Button>
-                                    <Button size="sm" variant="ghost" type="button" onClick={() => setIsInviting(false)}>
-                                        <Icons.Logout size={14} className={rtl ? 'rotate-180' : ''} />
+                                    <Button size="sm" variant="ghost" className="w-full" type="button" onClick={() => setIsInviting(false)}>
+                                        {t('cancel')}
                                     </Button>
                                 </CardFooter>
                             </form>
