@@ -402,49 +402,47 @@ export function CouponList() {
             <Card className="shadow-xl bg-card border-border">
                 <CardHeader className="pb-2">
                     <div className="flex flex-col gap-3">
-                        <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-4">
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all shrink-0 border border-transparent hover:border-primary/20" 
-                                    onClick={() => { closeVault(); navigate('/dashboard'); }}
-                                    title={t('back')}
-                                >
-                                    {rtl ? <Icons.ChevronRight size={24} /> : <Icons.ChevronLeft size={24} />}
-                                </Button>
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                        <Icons.Cart size={24} className="text-primary shrink-0" />
-                                        {isRenamingVault ? (
-                                        <form onSubmit={handleRenameVault} className="flex items-center gap-2">
-                                            <Input 
-                                                size="sm"
-                                                value={newVaultName}
-                                                onChange={(e) => setNewVaultName(e.target.value)}
-                                                className="h-8 py-0 px-2 min-w-[150px]"
-                                                autoFocus
-                                            />
-                                            <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" type="submit">{t('save')}</Button>
-                                            <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" type="button" onClick={() => { setIsRenamingVault(false); setNewVaultName(vaultName); }}>{t('cancel')}</Button>
-                                        </form>
-                                    ) : (
-                                        <CardTitle className="group/title flex items-center gap-2 cursor-pointer" onClick={() => { setIsRenamingVault(true); setNewVaultName(vaultName); }}>
-                                            {vaultName}
-                                            <Icons.Edit size={14} className="opacity-0 group-hover/title:opacity-50 transition-opacity" />
-                                        </CardTitle>
-                                    )}
-                                    </div>
+                        <div className="flex items-center gap-4">
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all shrink-0 border border-transparent hover:border-primary/20" 
+                                onClick={() => { closeVault(); navigate('/dashboard'); }}
+                                title={t('back')}
+                            >
+                                {rtl ? <Icons.ChevronRight size={24} /> : <Icons.ChevronLeft size={24} />}
+                            </Button>
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <Icons.Cart size={24} className="text-primary shrink-0" />
+                                    {isRenamingVault ? (
+                                    <form onSubmit={handleRenameVault} className="flex items-center gap-2">
+                                        <Input 
+                                            size="sm"
+                                            value={newVaultName}
+                                            onChange={(e) => setNewVaultName(e.target.value)}
+                                            className="h-8 py-0 px-2 min-w-[150px]"
+                                            autoFocus
+                                        />
+                                        <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" type="submit">{t('save')}</Button>
+                                        <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" type="button" onClick={() => { setIsRenamingVault(false); setNewVaultName(vaultName); }}>{t('cancel')}</Button>
+                                    </form>
+                                ) : (
+                                    <CardTitle className="group/title flex items-center gap-2 cursor-pointer" onClick={() => { setIsRenamingVault(true); setNewVaultName(vaultName); }}>
+                                        {vaultName}
+                                        <Icons.Edit size={14} className="opacity-0 group-hover/title:opacity-50 transition-opacity" />
+                                    </CardTitle>
+                                )}
                                 </div>
                             </div>
-                            <div className="flex gap-2">
-                                <Button variant="outline" size="sm" onClick={() => setIsInviting(!isInviting)}>
-                                    <Icons.UserPlus size={16} className={rtl ? 'ml-2' : 'mr-2'} /> <span className="hidden sm:inline">{t('share')}</span>
-                                </Button>
-                                <Button size="sm" onClick={() => setIsDialogOpen(true)}>
-                                    <Icons.Add size={16} className={rtl ? 'ml-2' : 'mr-2'} /> <span className="hidden sm:inline">{t('add')}</span>
-                                </Button>
-                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setIsInviting(!isInviting)}>
+                                <Icons.UserPlus size={16} className={rtl ? 'ml-2' : 'mr-2'} /> <span className="hidden sm:inline">{t('share')}</span>
+                            </Button>
+                            <Button size="sm" onClick={() => setIsDialogOpen(true)}>
+                                <Icons.Add size={16} className={rtl ? 'ml-2' : 'mr-2'} /> <span className="hidden sm:inline">{t('add')}</span>
+                            </Button>
                         </div>
                     </div>
                 </CardHeader>

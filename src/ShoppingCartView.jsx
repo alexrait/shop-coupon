@@ -224,6 +224,18 @@ export function ShoppingCartView() {
         if (e) e.preventDefault();
         if (!itemName.trim()) return;
 
+        // Check if item already exists (only for new items, not edits)
+        if (!editingItem) {
+            const exists = items.some(item => 
+                item.encrypted_name.toLowerCase() === itemName.trim().toLowerCase() &&
+                item.status !== 'bought'
+            );
+            if (exists) {
+                alert(t('itemAlreadyExists'));
+                return;
+            }
+        }
+
         setLoading(true);
         try {
             if (editingItem) {

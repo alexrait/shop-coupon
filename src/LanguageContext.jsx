@@ -95,6 +95,7 @@ const translations = {
         itemBought: "Item bought",
         itemDeleted: "Item deleted",
         couponDeleted: "Coupon deleted",
+        itemAlreadyExists: "This item already exists in the list!",
     },
     he: {
         appName: "ארגז הקופונים",
@@ -190,6 +191,7 @@ const translations = {
         itemBought: "פריט נקנה",
         itemDeleted: "פריט נמחק",
         couponDeleted: "קופון נמחק",
+        itemAlreadyExists: "פריט זה כבר קיים ברשימה!",
     }
 };
 
