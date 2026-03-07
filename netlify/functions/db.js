@@ -1,10 +1,14 @@
 import { neon } from '@netlify/neon';
 
 export const getDb = () => {
+  const connectionString = process.env.DATABASE_URL || process.env.NETLIFY_DATABASE_URL;
   try {
-    return neon();
+    if (!connectionString) {
+      console.error("No database connection string found. Check Netlify Environment Variables.");
+    }
+    return neon(connectionString);
   } catch (e) {
-    console.error("Neon connection failed. Is DATABASE_URL set in Netlify Environment Variables?");
+    console.error("Neon connection failed:", e);
     throw new Error("Database connection failed. Please ensure the Neon integration is configured in Netlify.");
   }
 };
