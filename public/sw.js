@@ -29,6 +29,9 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+    // Skip non-http/https requests (like chrome-extension://)
+    if (!(event.request.url.startsWith('http'))) return;
+
     event.respondWith(
         caches.match(event.request)
             .then(response => {
