@@ -3,6 +3,9 @@
   publish = "dist"
   functions = "netlify/functions"
 
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "VAPID_PUBLIC_KEY,VITE_VAPID_PUBLIC_KEY"
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
