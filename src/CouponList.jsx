@@ -1,5 +1,23 @@
 import { useState, useRef, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { 
+    DndContext, 
+    closestCenter, 
+    KeyboardSensor, 
+    PointerSensor, 
+    useSensor, 
+    useSensors,
+    DragOverlay
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
 import { cryptoUtils } from './lib/crypto';
 import { useVault } from './VaultContext';
 import { useAuth } from './useAuth';
@@ -11,6 +29,110 @@ import { Label } from './components/ui/label';
 import { Badge } from './components/ui/badge';
 import { Separator } from './components/ui/separator';
 import { useLanguage } from './LanguageContext';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "./components/ui/dialog";
+
+function SortableCouponItem({ coupon, idx, rtl, t, startEdit, markStatus }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id: coupon.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 50 : 'auto',
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+        <div 
+            ref={setNodeRef} 
+            style={style} 
+            className={`group/item flex items-center gap-3 p-2 bg-card border border-border rounded-lg transition-all ${coupon.status === 'used' ? 'opacity-50 grayscale' : 'hover:bg-muted/30 shadow-sm'}`}
+        >
+            {/* Grip Handle */}
+            <div 
+                {...attributes} 
+                {...listeners} 
+                className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-primary transition-colors"
+            >
+                <Icons.Grip size={16} />
+            </div>
+
+            {/* Main Content (Compact) */}
+            <div className={`flex-1 flex items-center gap-4 min-w-0 ${rtl ? 'flex-row-reverse' : ''}`} onClick={() => startEdit(coupon)}>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                        <h4 className={`font-semibold text-sm truncate ${coupon.error ? 'text-destructive' : ''}`}>
+                            {coupon.title}
+                        </h4>
+                        {coupon.value && (
+                            <Badge variant="outline" className="text-[10px] py-0 px-1 bg-background font-mono shrink-0">
+                                {coupon.value}
+                            </Badge>
+                        )}
+                        {coupon.status === 'used' && (
+                            <Badge variant="secondary" className="text-[8px] uppercase py-0 px-1 shrink-0">
+                                {t('activityFeed')}
+                            </Badge>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                        <span className="flex items-center gap-1"><Icons.Lock size={10} /> {t('viewCode')}</span>
+                        <span className="flex items-center gap-1"><Icons.History size={10} /> {new Date(coupon.created_at).toLocaleDateString()}</span>
+                    </div>
+                </div>
+
+                {/* Compact Image/Icon */}
+                <div className="shrink-0">
+                    {coupon.imageBase64 ? (
+                        <div className="w-10 h-10 rounded border border-border bg-white flex items-center justify-center overflow-hidden">
+                            <img src={coupon.imageBase64} alt="" className="max-w-[80%] max-h-[80%] object-contain" />
+                        </div>
+                    ) : (
+                        <div className="w-10 h-10 rounded border border-border bg-muted/20 flex items-center justify-center">
+                            <Icons.Image size={16} className="opacity-10" />
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Actions */}
+            <div className={`flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity ${rtl ? 'flex-row-reverse' : ''}`}>
+                {coupon.status !== 'used' && (
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-muted-foreground hover:text-primary" 
+                        onClick={(e) => { e.stopPropagation(); markStatus(coupon.id, 'used'); }} 
+                        title={t('markUsed')}
+                    >
+                        <Icons.Check size={16} />
+                    </Button>
+                )}
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive" 
+                    onClick={(e) => { e.stopPropagation(); markStatus(coupon.id, 'deleted'); }} 
+                    title={t('delete')}
+                >
+                    <Icons.Trash size={16} />
+                </Button>
+            </div>
+        </div>
+    );
+}
 
 export function CouponList() {
     const { privateKey, publicKey, vaultId, vaultName, updateVaultName } = useVault();
@@ -18,7 +140,7 @@ export function CouponList() {
     const { t, rtl } = useLanguage();
 
     const [coupons, setCoupons] = useState([]);
-    const [isAdding, setIsAdding] = useState(false);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingCoupon, setEditingCoupon] = useState(null);
     const [isInviting, setIsInviting] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -27,7 +149,7 @@ export function CouponList() {
     const [isRenamingVault, setIsRenamingVault] = useState(false);
     const [newVaultName, setNewVaultName] = useState(vaultName || '');
 
-    // Form State (Shared between Add and Edit)
+    // Form State
     const [title, setTitle] = useState('');
     const [code, setCode] = useState('');
     const [value, setValue] = useState('');
@@ -38,11 +160,28 @@ export function CouponList() {
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteLoading, setInviteLoading] = useState(false);
 
+    // DnD Sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
     useEffect(() => {
         if (vaultId) {
             fetchCoupons();
         }
     }, [vaultId, privateKey]);
+
+    useEffect(() => {
+        if (!isDialogOpen) {
+            // Reset form when dialog closes
+            setEditingCoupon(null);
+            setTitle(''); setCode(''); setValue(''); setImageBase64('');
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    }, [isDialogOpen]);
 
     const fetchCoupons = async () => {
         if (!privateKey) return;
@@ -67,7 +206,6 @@ export function CouponList() {
                         };
                     } catch (err) {
                         console.error("Failed to decrypt coupon:", err);
-                        // Return a fallback object that preserves metadata so the UI doesn't crash
                         return { 
                             title: t('decryptionFailed'), 
                             id: row.id, 
@@ -88,30 +226,8 @@ export function CouponList() {
         }
     };
 
-    const handleInvite = async (e) => {
-        e.preventDefault();
-        setInviteLoading(true);
-        try {
-            const res = await apiFetch(`/api/invites?list_id=${vaultId}`, {
-                method: 'POST',
-                body: JSON.stringify({ email: inviteEmail })
-            });
-            if (res.ok) {
-                alert('Invite sent!');
-                setInviteEmail('');
-                setIsInviting(false);
-            } else {
-                alert('User not found or already invited.');
-            }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setInviteLoading(false);
-        }
-    };
-
     const handleSaveCoupon = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         if (!publicKey) return alert("No active vault keys found.");
 
         setLoading(true);
@@ -143,14 +259,12 @@ export function CouponList() {
 
             if (res.ok) {
                 await fetchCoupons();
-                // Stay on screen, but if it was "Add", reset the title/code for the next one
                 if (!editingCoupon) {
+                    // Reset for next multi-add
                     setTitle(''); setCode(''); setValue(''); setImageBase64('');
                     if (fileInputRef.current) fileInputRef.current.value = '';
                 } else {
-                    // If editing, maybe update the local editingCoupon state with the new data?
-                    // Actually, the user wants to STAY on the screen. 
-                    // Let's just alert success so they know it's done.
+                    setIsDialogOpen(false);
                 }
             } else {
                 alert("Failed to save coupon");
@@ -169,69 +283,16 @@ export function CouponList() {
         setCode(c.code || '');
         setValue(c.value || '');
         setImageBase64(c.imageBase64 || '');
-        setIsAdding(false);
+        setIsDialogOpen(true);
     };
 
     const handleMagicFormat = () => {
-        // Remove existing hyphens
         const clean = code.replace(/-/g, '');
         if (clean.length > 0) {
-            // Split into 4-character chunks
             const chunks = clean.match(/.{1,4}/g);
             if (chunks) {
                 setCode(chunks.join('-'));
             }
-        }
-    };
-
-    const handleReorder = async (coupon, direction) => {
-        const index = coupons.findIndex(c => c.id === coupon.id);
-        if (index === -1) return;
-
-        const newIndex = direction === 'up' ? index - 1 : index + 1;
-        if (newIndex < 0 || newIndex >= coupons.length) return;
-
-        const neighbor = coupons[newIndex];
-
-        const updatedCoupons = [...coupons];
-        const tempPos = coupon.position || 0;
-        coupon.position = neighbor.position || 0;
-        neighbor.position = tempPos;
-        updatedCoupons.sort((a, b) => a.position - b.position);
-        setCoupons(updatedCoupons);
-
-        try {
-            await Promise.all([
-                apiFetch(`/api/coupons?list_id=${vaultId}&id=${coupon.id}`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({ position: coupon.position })
-                }),
-                apiFetch(`/api/coupons?list_id=${vaultId}&id=${neighbor.id}`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({ position: neighbor.position })
-                })
-            ]);
-        } catch (err) {
-            console.error("Reorder failed:", err);
-            fetchCoupons();
-        }
-    };
-
-    const markStatus = async (id, status) => {
-        const confirmMsg = status === 'deleted' ? t('confirmDelete') : t('markUsed');
-        if (!confirm(confirmMsg)) return;
-
-        try {
-            const method = status === 'deleted' ? 'DELETE' : 'PATCH';
-            const body = status === 'used' ? JSON.stringify({ status: 'used' }) : null;
-
-            const res = await apiFetch(`/api/coupons?list_id=${vaultId}&id=${id}`, {
-                method,
-                body
-            });
-            if (res.ok) fetchCoupons();
-        } catch (err) {
-            console.error(err);
         }
     };
 
@@ -254,194 +315,256 @@ export function CouponList() {
         }
     };
 
+    const markStatus = async (id, status) => {
+        const confirmMsg = status === 'deleted' ? t('confirmDelete') : t('markUsed');
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            const method = status === 'deleted' ? 'DELETE' : 'PATCH';
+            const body = status === 'used' ? JSON.stringify({ status: 'used' }) : null;
+
+            const res = await apiFetch(`/api/coupons?list_id=${vaultId}&id=${id}`, {
+                method,
+                body
+            });
+            if (res.ok) fetchCoupons();
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleDragEnd = async (event) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = coupons.findIndex((item) => item.id === active.id);
+        const newIndex = coupons.findIndex((item) => item.id === over.id);
+
+        const newItems = arrayMove(coupons, oldIndex, newIndex);
+        
+        // Optimistic UI update
+        // We need to recalculate positions to ensure they are unique and ordered
+        const updatedItems = newItems.map((item, index) => ({
+            ...item,
+            position: index * 10
+        }));
+        setCoupons(updatedItems);
+
+        try {
+            // Update the positions in the backend
+            // For simplicity, we just update the two neighbors or all affected?
+            // Actually, dnd-kit gives us the final order. Best to persist the changed positions.
+            await Promise.all(updatedItems.map((c, idx) => {
+                if (c.position !== coupons.find(orig => orig.id === c.id)?.position) {
+                    return apiFetch(`/api/coupons?list_id=${vaultId}&id=${c.id}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ position: c.position })
+                    });
+                }
+                return Promise.resolve();
+            }));
+        } catch (err) {
+            console.error("Reorder failed:", err);
+            fetchCoupons(); // Revert on failure
+        }
+    };
+
+    const handleInvite = async (e) => {
+        e.preventDefault();
+        setInviteLoading(true);
+        try {
+            const res = await apiFetch(`/api/invites?list_id=${vaultId}`, {
+                method: 'POST',
+                body: JSON.stringify({ email: inviteEmail })
+            });
+            if (res.ok) {
+                alert('Invite sent!');
+                setInviteEmail('');
+                setIsInviting(false);
+            } else {
+                alert('User not found or already invited.');
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setInviteLoading(false);
+        }
+    };
+
     return (
-        <Card className="shadow-xl bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                        <Icons.Cart size={24} className="text-primary shrink-0" />
-                        {isRenamingVault ? (
-                            <form onSubmit={handleRenameVault} className="flex items-center gap-2">
-                                <Input 
-                                    size="sm"
-                                    value={newVaultName}
-                                    onChange={(e) => setNewVaultName(e.target.value)}
-                                    className="h-8 py-0 px-2 min-w-[150px]"
-                                    autoFocus
-                                />
-                                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" type="submit">{t('save')}</Button>
-                                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" type="button" onClick={() => { setIsRenamingVault(false); setNewVaultName(vaultName); }}>{t('cancel')}</Button>
-                            </form>
-                        ) : (
-                            <CardTitle className="group/title flex items-center gap-2 cursor-pointer" onClick={() => { setIsRenamingVault(true); setNewVaultName(vaultName); }}>
-                                {vaultName}
-                                <Icons.Edit size={14} className="opacity-0 group-hover/title:opacity-50 transition-opacity" />
-                            </CardTitle>
-                        )}
+        <>
+            <Card className="shadow-xl bg-card border-border">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                            <Icons.Cart size={24} className="text-primary shrink-0" />
+                            {isRenamingVault ? (
+                                <form onSubmit={handleRenameVault} className="flex items-center gap-2">
+                                    <Input 
+                                        size="sm"
+                                        value={newVaultName}
+                                        onChange={(e) => setNewVaultName(e.target.value)}
+                                        className="h-8 py-0 px-2 min-w-[150px]"
+                                        autoFocus
+                                    />
+                                    <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" type="submit">{t('save')}</Button>
+                                    <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" type="button" onClick={() => { setIsRenamingVault(false); setNewVaultName(vaultName); }}>{t('cancel')}</Button>
+                                </form>
+                            ) : (
+                                <CardTitle className="group/title flex items-center gap-2 cursor-pointer" onClick={() => { setIsRenamingVault(true); setNewVaultName(vaultName); }}>
+                                    {vaultName}
+                                    <Icons.Edit size={14} className="opacity-0 group-hover/title:opacity-50 transition-opacity" />
+                                </CardTitle>
+                            )}
+                        </div>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Icons.Vault size={12} /> {t('id')}: {vaultId}
+                        </p>
                     </div>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Icons.Vault size={12} /> {t('id')}: {vaultId}
-                    </p>
-                </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setIsInviting(!isInviting)}>
-                        <Icons.UserPlus size={16} className={rtl ? 'ml-2' : 'mr-2'} /> {t('share')}
-                    </Button>
-                    <Button size="sm" onClick={() => { setIsAdding(!isAdding); setEditingCoupon(null); setTitle(''); setCode(''); setValue(''); setImageBase64(''); }}>
-                        <Icons.Add size={16} className={rtl ? 'ml-2' : 'mr-2'} /> {t('add')}
-                    </Button>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <Separator className="mb-6 opacity-40" />
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setIsInviting(!isInviting)}>
+                            <Icons.UserPlus size={16} className={rtl ? 'ml-2' : 'mr-2'} /> {t('share')}
+                        </Button>
+                        <Button size="sm" onClick={() => setIsDialogOpen(true)}>
+                            <Icons.Add size={16} className={rtl ? 'ml-2' : 'mr-2'} /> {t('add')}
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <Separator className="mb-6 opacity-40" />
 
-                {isInviting && (
-                    <Card className="mb-6 border-border bg-muted/30 animate-in slide-in-from-right-4 duration-300">
-                        <CardHeader className="py-4 text-start">
-                            <CardTitle className="text-sm">{t('inviteMember')}</CardTitle>
-                        </CardHeader>
-                        <form onSubmit={handleInvite}>
-                            <CardContent className="py-0 pb-4">
-                                <Input
-                                    type="email"
-                                    required
-                                    value={inviteEmail}
-                                    onChange={e => setInviteEmail(e.target.value)}
-                                    placeholder={t('enterEmail')}
-                                    className="text-start bg-background"
-                                />
-                            </CardContent>
-                            <CardFooter className="flex gap-2 py-4 pt-0">
-                                <Button size="sm" className="w-full" disabled={inviteLoading}>
-                                    {inviteLoading ? <Loader2 className="animate-spin mr-2 ml-2" size={14} /> : <Icons.Share size={14} className={rtl ? 'ml-2' : 'mr-2'} />}
-                                    {t('sendAccess')}
-                                </Button>
-                                <Button size="sm" variant="ghost" type="button" onClick={() => setIsInviting(false)}>
-                                    <Icons.Logout size={14} className={rtl ? 'rotate-180' : ''} />
-                                </Button>
-                            </CardFooter>
-                        </form>
-                    </Card>
-                )}
+                    {isInviting && (
+                        <Card className="mb-6 border-border bg-muted/30 animate-in slide-in-from-right-4 duration-300">
+                            <CardHeader className="py-4 text-start">
+                                <CardTitle className="text-sm">{t('inviteMember')}</CardTitle>
+                            </CardHeader>
+                            <form onSubmit={handleInvite}>
+                                <CardContent className="py-0 pb-4">
+                                    <Input
+                                        type="email"
+                                        required
+                                        value={inviteEmail}
+                                        onChange={e => setInviteEmail(e.target.value)}
+                                        placeholder={t('enterEmail')}
+                                        className="text-start bg-background"
+                                    />
+                                </CardContent>
+                                <CardFooter className="flex gap-2 py-4 pt-0">
+                                    <Button size="sm" className="w-full" disabled={inviteLoading}>
+                                        {inviteLoading ? <Loader2 className="animate-spin mr-2 ml-2" size={14} /> : <Icons.Share size={14} className={rtl ? 'ml-2' : 'mr-2'} />}
+                                        {t('sendAccess')}
+                                    </Button>
+                                    <Button size="sm" variant="ghost" type="button" onClick={() => setIsInviting(false)}>
+                                        <Icons.Logout size={14} className={rtl ? 'rotate-180' : ''} />
+                                    </Button>
+                                </CardFooter>
+                            </form>
+                        </Card>
+                    )}
 
-                {(isAdding || editingCoupon) && (
-                    <Card className="mb-6 border-border bg-muted/20 shadow-lg animate-in fade-in duration-300">
-                        <CardHeader className="text-start">
-                            <CardTitle className="text-lg flex items-center gap-2">
-                                <Icons.Coupon size={20} className="text-primary" /> {editingCoupon ? t('edit') : t('addCoupon')}
-                            </CardTitle>
-                        </CardHeader>
-                        <form onSubmit={handleSaveCoupon}>
-                            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-start">
+                    {fetching ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground animate-pulse">
+                            <Icons.Cart size={48} className="mb-4 opacity-20" />
+                            <p>{t('decrypting')}</p>
+                        </div>
+                    ) : coupons.length === 0 ? (
+                        <div className="text-center py-20 bg-muted/10 border-2 border-dashed border-border rounded-xl">
+                            <Icons.Coupon size={64} className="mx-auto mb-4 opacity-10" />
+                            <p className="text-muted-foreground">{t('noVaults')}</p>
+                            <Button variant="link" onClick={() => setIsDialogOpen(true)}>{t('addCoupon')}</Button>
+                        </div>
+                    ) : (
+                        <DndContext 
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <div className="space-y-2">
+                                <SortableContext 
+                                    items={coupons.map(c => c.id)}
+                                    strategy={verticalListSortingStrategy}
+                                >
+                                    {coupons.filter(c => c.status !== 'deleted').map((c, idx) => (
+                                        <SortableCouponItem 
+                                            key={c.id} 
+                                            coupon={c} 
+                                            idx={idx} 
+                                            rtl={rtl} 
+                                            t={t} 
+                                            startEdit={startEdit} 
+                                            markStatus={markStatus} 
+                                        />
+                                    ))}
+                                </SortableContext>
+                            </div>
+                        </DndContext>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="max-w-md bg-card border-border shadow-2xl overflow-hidden p-0 gap-0">
+                    <DialogHeader className="p-6 pb-4 text-start border-b border-border bg-muted/20">
+                        <DialogTitle className="text-xl flex items-center gap-2">
+                            <Icons.Coupon size={24} className="text-primary" /> 
+                            {editingCoupon ? t('edit') : t('addCoupon')}
+                        </DialogTitle>
+                    </DialogHeader>
+                    
+                    <form onSubmit={handleSaveCoupon}>
+                        <div className="p-6 space-y-4 text-start">
+                            <div className="space-y-2">
+                                <Label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">{t('title')}</Label>
+                                <Input required value={title} onChange={e => setTitle(e.target.value)} placeholder="..." className="bg-background/50" />
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <Label className="flex justify-between items-center text-xs text-muted-foreground uppercase font-bold tracking-wider">
+                                    {t('code')}
+                                    <Button type="button" variant="link" size="sm" className="h-auto p-0 text-[10px] text-primary" onClick={handleMagicFormat}>
+                                        <Icons.Shield size={10} className="mr-1 ml-1" /> {t('formatCode')}
+                                    </Button>
+                                </Label>
+                                <Input value={code} onChange={e => setCode(e.target.value)} placeholder="XXXX-XXXX-XXXX-XXXX" className="bg-background/50 font-mono" />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>{t('title')}</Label>
-                                    <Input required value={title} onChange={e => setTitle(e.target.value)} placeholder="..." className="bg-background" />
+                                    <Label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">{t('value')}</Label>
+                                    <Input value={value} onChange={e => setValue(e.target.value)} placeholder="..." className="bg-background/50" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="flex justify-between items-center">
-                                        {t('code')}
-                                        <Button type="button" variant="link" size="sm" className="h-auto p-0 text-[10px]" onClick={handleMagicFormat}>
-                                            <Icons.Shield size={10} className="mr-1 ml-1" /> {t('formatCode')}
-                                        </Button>
-                                    </Label>
-                                    <Input value={code} onChange={e => setCode(e.target.value)} placeholder="XXXX-XXXX-XXXX-XXXX" className="bg-background font-mono" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>{t('value')}</Label>
-                                    <Input value={value} onChange={e => setValue(e.target.value)} placeholder="..." className="bg-background" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>{t('image')}</Label>
+                                    <Label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">{t('image')}</Label>
                                     <div className="flex items-center gap-2">
-                                        <Input type="file" accept="image/*" onChange={(e) => {
+                                        <Input type="file" ref={fileInputRef} accept="image/*" onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             if (file) {
                                                 const reader = new FileReader();
                                                 reader.onloadend = () => setImageBase64(reader.result);
                                                 reader.readAsDataURL(file);
                                             }
-                                        }} className="cursor-pointer bg-background file:text-primary file:font-bold" />
-                                        {imageBase64 && <Icons.Check className="text-green-500" />}
+                                        }} className="cursor-pointer bg-background/50 text-[10px] file:text-primary file:font-bold h-9" />
                                     </div>
                                 </div>
-                            </CardContent>
-                            <CardFooter className="flex gap-2 justify-end">
-                                <Button variant="ghost" type="button" onClick={() => { setIsAdding(false); setEditingCoupon(null); }}>{t('cancel')}</Button>
-                                <Button type="submit" disabled={loading}>
-                                    {loading ? <Loader2 className="animate-spin mr-2 ml-2" /> : <Icons.Shield size={18} className={rtl ? 'ml-2' : 'mr-2'} />}
-                                    {loading ? t('saving') : (editingCoupon ? t('save') : t('protectSave'))}
-                                </Button>
-                            </CardFooter>
-                        </form>
-                    </Card>
-                )}
-
-                {fetching ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground animate-pulse">
-                        <Icons.Cart size={48} className="mb-4 opacity-20" />
-                        <p>{t('decrypting')}</p>
-                    </div>
-                ) : coupons.length === 0 ? (
-                    <div className="text-center py-20 bg-muted/10 border-2 border-dashed border-border rounded-xl">
-                        <Icons.Coupon size={64} className="mx-auto mb-4 opacity-10" />
-                        <p className="text-muted-foreground">{t('noVaults')}</p>
-                        <Button variant="link" onClick={() => setIsAdding(true)}>{t('addCoupon')}</Button>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 gap-4">
-                        {coupons.filter(c => c.status !== 'deleted').map((c, idx) => (
-                            <Card key={c.id} className={`group overflow-hidden border-border transition-all ${c.status === 'used' ? 'opacity-50 grayscale' : 'hover:bg-muted/30'}`}>
-                                <div className={`flex items-center ${rtl ? 'flex-row-reverse' : ''}`}>
-                                    {/* Reorder Controls */}
-                                    <div className="flex flex-col border-r border-border bg-muted/50 p-1 shrink-0">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleReorder(c, 'up')} disabled={idx === 0}>
-                                            <Icons.Key className="rotate-270 w-3 h-3" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleReorder(c, 'down')} disabled={idx === coupons.length - 1}>
-                                            <Icons.Key className="rotate-90 w-3 h-3" />
-                                        </Button>
-                                    </div>
-
-                                    <div className="flex-1 p-6 text-start cursor-pointer" onClick={() => startEdit(c)}>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h4 className={`font-bold text-lg ${c.error ? 'text-destructive' : ''}`}>{c.title}</h4>
-                                            {c.value && <Badge variant="outline" className="font-mono bg-background">{c.value}</Badge>}
-                                            {c.status === 'used' && <Badge variant="secondary" className="uppercase text-[10px]">{t('activityFeed')}</Badge>}
-                                        </div>
-                                        <p className="text-xs text-muted-foreground flex items-center gap-2">
-                                            <Icons.Lock size={12} /> {t('viewCode')}
-                                        </p>
-                                        <p className="text-[10px] text-muted-foreground mt-4 flex items-center gap-1 uppercase tracking-widest font-semibold">
-                                            <Icons.History size={10} /> {new Date(c.created_at).toLocaleDateString()}
-                                        </p>
-                                    </div>
-
-                                    {c.imageBase64 ? (
-                                        <div className={`w-32 h-32 bg-white flex items-center justify-center ${rtl ? 'border-r' : 'border-l'} border-border shrink-0`}>
-                                            <img src={c.imageBase64} alt="" className="max-w-[80%] max-h-[80%] object-contain" />
-                                        </div>
-                                    ) : (
-                                        <div className={`w-32 h-32 bg-muted/20 flex items-center justify-center ${rtl ? 'border-r' : 'border-l'} border-border shrink-0`}>
-                                            <Icons.Image size={32} className="opacity-10" />
-                                        </div>
-                                    )}
-
-                                    <div className={`p-2 bg-muted/50 border-l border-border shrink-0 self-stretch flex flex-col justify-center gap-2`}>
-                                        {c.status !== 'used' && (
-                                            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-primary transition-colors" onClick={(e) => { e.stopPropagation(); markStatus(c.id, 'used'); }} title={t('markUsed')}>
-                                                <Icons.Check size={20} />
-                                            </Button>
-                                        )}
-                                        <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-destructive transition-colors" onClick={(e) => { e.stopPropagation(); markStatus(c.id, 'deleted'); }} title={t('delete')}>
-                                            <Icons.Trash className="w-5 h-5" />
-                                        </Button>
-                                    </div>
+                            </div>
+                            
+                            {imageBase64 && (
+                                <div className="mt-2 border border-border rounded overflow-hidden w-20 h-20 bg-white flex items-center justify-center mx-auto">
+                                    <img src={imageBase64} alt="Preview" className="max-w-[90%] max-h-[90%] object-contain" />
                                 </div>
-                            </Card>
-                        ))}
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+                            )}
+                        </div>
+
+                        <DialogFooter className="p-6 pt-2 bg-muted/10 border-t border-border gap-2">
+                            <Button variant="ghost" type="button" onClick={() => setIsDialogOpen(false)}>{t('cancel')}</Button>
+                            <Button type="submit" disabled={loading} className="min-w-[120px]">
+                                {loading ? <Loader2 className="animate-spin mr-2 ml-2" /> : <Icons.Shield size={18} className={rtl ? 'ml-2' : 'mr-2'} />}
+                                {loading ? t('saving') : (editingCoupon ? t('save') : t('protectSave'))}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }
