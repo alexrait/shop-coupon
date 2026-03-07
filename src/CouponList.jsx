@@ -28,24 +28,34 @@ export function CouponList() {
         if (vaultId) {
             fetchCoupons();
         }
-    }, [vaultId]);
+    }, [vaultId, privateKey]); // Depend on privateKey to re-decrypt if keys change
 
     const fetchCoupons = async () => {
+        if (!privateKey) return;
         setFetching(true);
         try {
             const res = await apiFetch(`/api/coupons?list_id=${vaultId}`);
             if (res.ok) {
                 const data = await res.json();
 
-                // Decrypt coupons
-                const decrypted = await Promise.all(data.map(async (encrypted) => {
+                // Decrypt coupons using Hybrid Decryption
+                const decrypted = await Promise.all(data.map(async (row) => {
+                    const encrypted = row.encrypted_payload;
                     try {
-                        const payloadStr = await cryptoUtils.decryptRSA(encrypted.encrypted_payload, privateKey);
+                        // 1. Decrypt the symmetric AES key using RSA Private Key
+                        const aesKeyBase64 = await cryptoUtils.decryptRSA(encrypted.encrypted_aes_key, privateKey);
+
+                        // 2. Import the AES Key
+                        const aesKey = await cryptoUtils.importAESKey(aesKeyBase64);
+
+                        // 3. Decrypt the payload using the AES key
+                        const payloadStr = await cryptoUtils.decryptAES(encrypted.encrypted_data, encrypted.iv, aesKey);
+
                         const payload = JSON.parse(payloadStr);
-                        return { ...payload, id: encrypted.id, created_at: encrypted.created_at };
+                        return { ...payload, id: row.id, created_at: row.created_at };
                     } catch (err) {
                         console.error("Failed to decrypt coupon:", err);
-                        return { title: "[Decryption Failed]", id: encrypted.id };
+                        return { title: "[Decryption Failed]", id: row.id, error: true };
                     }
                 }));
 
@@ -78,13 +88,29 @@ export function CouponList() {
             const payload = { title, code, value, imageBase64 };
             const payloadString = JSON.stringify(payload);
 
-            // 1. Encrypt directly with RSA for now (if payload is small)
-            // Note: Hybrid encryption is better for large payloads, but let's stick to the simplest working path
-            const encryptedPayload = await cryptoUtils.encryptRSA(payloadString, publicKey);
+            // --- Hybrid Encryption Flow ---
+
+            // 1. Generate one-time symmetric AES key
+            const aesKey = await cryptoUtils.generateAESKey();
+
+            // 2. Encrypt large payload with AES
+            const { cipher, iv } = await cryptoUtils.encryptAES(payloadString, aesKey);
+
+            // 3. Export AES key to base64
+            const aesKeyBase64 = await cryptoUtils.exportAESKey(aesKey);
+
+            // 4. Encrypt the AES key with RSA Public Key
+            const encryptedAesKey = await cryptoUtils.encryptRSA(aesKeyBase64, publicKey);
+
+            const hybridPayload = {
+                encrypted_data: cipher,
+                iv,
+                encrypted_aes_key: encryptedAesKey
+            };
 
             const res = await apiFetch(`/api/coupons?list_id=${vaultId}`, {
                 method: 'POST',
-                body: JSON.stringify({ encrypted_payload: encryptedPayload })
+                body: JSON.stringify({ encrypted_payload: hybridPayload })
             });
 
             if (res.ok) {
@@ -96,7 +122,7 @@ export function CouponList() {
             }
         } catch (err) {
             console.error(err);
-            alert('Encryption failed. (Maybe image is too large for RSA?)');
+            alert('Encryption failed. Hybrid approach should support large images.');
         } finally {
             setLoading(false);
         }
@@ -221,8 +247,8 @@ export function CouponList() {
                     {coupons.map((c) => (
                         <div key={c.id} className="card coupon-card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ flex: 1 }}>
-                                <h4 style={{ margin: 0 }}>{c.title}</h4>
-                                {c.code && <code className="block mt-1" style={{ color: 'var(--color-primary)', fontSize: '1.1rem' }}>{c.code}</code>}
+                                <h4 style={{ margin: 0, color: c.error ? 'var(--color-error)' : 'inherit' }}>{c.title}</h4>
+                                {c.code && <code className="block mt-1" style={{ color: 'var(--color-primary)', fontSize: '1rem' }}>{c.code}</code>}
                                 {c.value && <p style={{ margin: '0.25rem 0 0', fontWeight: 'bold' }}>{c.value}</p>}
                                 <p style={{ margin: '0.5rem 0 0', fontSize: '0.7rem', opacity: 0.5 }}>Added {new Date(c.created_at).toLocaleDateString()}</p>
                             </div>
