@@ -38,9 +38,9 @@ export function CouponHistory() {
     };
 
     return (
-        <Card className="h-full bg-card/60 border-primary/20 backdrop-blur-sm">
-            <CardHeader className="text-start">
-                <CardTitle className="text-xl flex items-center gap-2">
+        <Card className="h-full bg-card border-border shadow-md">
+            <CardHeader className="text-start border-b border-border/40 pb-4">
+                <CardTitle className="text-lg flex items-center gap-2">
                     <Icons.History className="text-primary" /> {t('activityFeed')}
                 </CardTitle>
             </CardHeader>

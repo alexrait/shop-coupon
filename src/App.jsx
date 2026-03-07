@@ -15,18 +15,18 @@ const Home = ({ login }) => {
   const { t } = useLanguage();
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] px-4">
-      <Card className="max-w-[400px] w-full text-center p-8 bg-card/50 backdrop-blur-md border-primary/20 shadow-2xl animate-in zoom-in-95 duration-500">
+      <Card className="max-w-[400px] w-full text-center p-8 bg-card border-border shadow-xl animate-in zoom-in-95 duration-500">
         <div className="flex justify-center mb-6">
-          <Icons.Vault size={64} className="text-primary animate-pulse" />
+          <Icons.Vault size={64} className="text-primary" />
         </div>
-        <CardTitle className="text-3xl font-bold bg-gradient-to-br from-white to-gray-400 bg-clip-text text-transparent mb-2">
+        <CardTitle className="text-3xl font-bold mb-2">
           {t('appName')}
         </CardTitle>
         <p className="text-muted-foreground mb-8">
           {t('tagline')}
         </p>
         <Button size="lg" className="w-full font-bold text-lg" onClick={login}>
-          <Icons.LockOpen size={20} className="mr-[8px] ml-[8px]" />
+          <Icons.LockOpen size={20} className="mr-2 ml-2" />
           {t('loginVault')}
         </Button>
       </Card>
@@ -76,7 +76,7 @@ function AppContent() {
   return (
     <Router>
       <div className="min-h-screen bg-background font-sans selection:bg-primary/30">
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
           <div className="container flex h-16 items-center justify-between px-4">
             <Link to="/" className="flex items-center gap-2 group transition-all">
               <Icons.Vault size={32} className="text-primary group-hover:scale-110 transition-transform" />
@@ -88,10 +88,10 @@ function AppContent() {
               </Button>
               {user ? (
                 <div className="flex items-center gap-3">
-                  <span className="hidden sm:inline text-sm text-muted-foreground bg-secondary px-3 py-1 rounded-full">
+                  <span className="hidden sm:inline text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted px-4 py-1 rounded-full border border-border">
                     {user.email}
                   </span>
-                  <Button variant="outline" size="icon" onClick={logout} title={t('logout')} className="rounded-full">
+                  <Button variant="outline" size="icon" onClick={logout} title={t('logout')} className="rounded-full shadow-sm">
                     <Icons.Logout size={18} className={lang === 'he' ? 'rotate-180' : ''} />
                   </Button>
                 </div>

@@ -62,6 +62,8 @@ export const initSchema = async () => {
       list_id UUID REFERENCES shopcoupon.lists(id) ON DELETE CASCADE,
       category_id UUID REFERENCES shopcoupon.categories(id) ON DELETE SET NULL,
       encrypted_payload JSONB NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      position INTEGER DEFAULT 0,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
       deleted_at TIMESTAMP WITH TIME ZONE

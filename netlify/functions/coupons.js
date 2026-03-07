@@ -28,8 +28,8 @@ export const handler = async (event, context) => {
         if (method === 'GET') {
             const coupons = await sql`
                 SELECT * FROM shopcoupon.coupons 
-                WHERE list_id = ${listId} AND deleted_at IS NULL
-                ORDER BY created_at DESC
+                WHERE list_id = ${listId} AND status != 'deleted'
+                ORDER BY position ASC, created_at DESC
             `;
             return { statusCode: 200, body: JSON.stringify(coupons) };
         }
@@ -38,9 +38,13 @@ export const handler = async (event, context) => {
             const body = JSON.parse(event.body);
             const { encrypted_payload } = body;
 
+            // Get max position for auto-incrementing new coupon position
+            const [maxPos] = await sql`SELECT COALESCE(MAX(position), 0) as max_p FROM shopcoupon.coupons WHERE list_id = ${listId}`;
+            const nextPos = (maxPos?.max_p || 0) + 10;
+
             const [newCoupon] = await sql`
-                INSERT INTO shopcoupon.coupons (list_id, encrypted_payload)
-                VALUES (${listId}, ${encrypted_payload})
+                INSERT INTO shopcoupon.coupons (list_id, encrypted_payload, position)
+                VALUES (${listId}, ${encrypted_payload}, ${nextPos})
                 RETURNING *
             `;
 
@@ -53,18 +57,58 @@ export const handler = async (event, context) => {
             return { statusCode: 201, body: JSON.stringify(newCoupon) };
         }
 
-        // DELETE /api/coupons?list_id=...&id=...
+        // PATCH /api/coupons?list_id=...&id=... (Used for reordering, status, or content updates)
+        if (method === 'PATCH') {
+            const couponId = event.queryStringParameters?.id;
+            const body = JSON.parse(event.body);
+            const { status, position, encrypted_payload } = body;
+
+            if (!couponId) return { statusCode: 400, body: 'coupon id required' };
+
+            const updates = {};
+            if (status) updates.status = status;
+            if (position !== undefined) updates.position = position;
+            if (encrypted_payload) updates.encrypted_payload = encrypted_payload;
+
+            if (Object.keys(updates).length === 0) return { statusCode: 400, body: 'nothing to update' };
+
+            const [updated] = await sql`
+                UPDATE shopcoupon.coupons 
+                SET ${sql(updates, Object.keys(updates))}, 
+                    updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ${couponId} AND list_id = ${listId}
+                RETURNING *
+            `;
+
+            if (status === 'used') {
+                await sql`
+                    INSERT INTO shopcoupon.action_logs (user_id, list_id, coupon_id, action_type)
+                    VALUES (${userId}, ${listId}, ${couponId}, 'USED')
+                `;
+            } else if (encrypted_payload) {
+                await sql`
+                    INSERT INTO shopcoupon.action_logs (user_id, list_id, coupon_id, action_type)
+                    VALUES (${userId}, ${listId}, ${couponId}, 'UPDATED')
+                `;
+            }
+
+            return { statusCode: 200, body: JSON.stringify(updated) };
+        }
+
+        // DELETE /api/coupons?list_id=...&id=... (Hard delete - setting status to deleted)
         if (method === 'DELETE') {
             const couponId = event.queryStringParameters?.id;
             if (!couponId) return { statusCode: 400, body: 'coupon id required' };
 
             await sql`
-                 UPDATE shopcoupon.coupons SET deleted_at = CURRENT_TIMESTAMP WHERE id = ${couponId} AND list_id = ${listId}
+                 UPDATE shopcoupon.coupons 
+                 SET status = 'deleted', deleted_at = CURRENT_TIMESTAMP 
+                 WHERE id = ${couponId} AND list_id = ${listId}
              `;
 
             await sql`
                 INSERT INTO shopcoupon.action_logs (user_id, list_id, coupon_id, action_type)
-                VALUES (${userId}, ${listId}, ${couponId}, 'USED')
+                VALUES (${userId}, ${listId}, ${couponId}, 'DELETED')
              `;
 
             return { statusCode: 204, body: '' };

@@ -7,12 +7,12 @@ export function PrivacyModal({ onClose }) {
     const { t } = useLanguage();
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-card w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-xl border border-primary/20 p-8 shadow-2xl relative">
+            <div className="bg-card w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-xl border border-border p-8 shadow-2xl relative">
                 <Button variant="ghost" size="icon" className="absolute top-4 right-4" onClick={onClose}>
                     <Icons.Logout size={20} />
                 </Button>
                 <h2 className="text-2xl font-bold mb-6">{t('privacy')}</h2>
-                <div className="prose prose-invert max-w-none text-muted-foreground space-y-4">
+                <div className="prose max-w-none text-muted-foreground space-y-4">
                     <p>At Vault Cart, your privacy is literally built into the code. We do not store your passwords, private keys, or plain-text coupon data on our servers.</p>
                     <h3 className="text-foreground font-semibold mt-4">1. Data Encryption</h3>
                     <p>All sensitive information is encrypted in your browser using standardized Web Crypto APIs before being sent to our backend. We only host the encrypted blobs.</p>
@@ -30,12 +30,12 @@ export function TermsModal({ onClose }) {
     const { t } = useLanguage();
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-card w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-xl border border-primary/20 p-8 shadow-2xl relative">
+            <div className="bg-card w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-xl border border-border p-8 shadow-2xl relative">
                 <Button variant="ghost" size="icon" className="absolute top-4 right-4" onClick={onClose}>
                     <Icons.Logout size={20} />
                 </Button>
                 <h2 className="text-2xl font-bold mb-6">{t('terms')}</h2>
-                <div className="prose prose-invert max-w-none text-muted-foreground space-y-4">
+                <div className="prose max-w-none text-muted-foreground space-y-4">
                     <p>By using Vault Cart, you agree to the following terms:</p>
                     <h3 className="text-foreground font-semibold mt-4">1. Security Responsibility</h3>
                     <p>You are solely responsible for remembering your vault passwords. If you lose your password, there is NO recovery mechanism, and your data will be permanently inaccessible.</p>

@@ -48,6 +48,13 @@ const translations = {
         sendAccess: "Send Access",
         decryptionFailed: "[Decryption Failed]",
         id: "ID",
+        delete: "Delete",
+        confirmDelete: "Are you sure you want to permanently delete this coupon?",
+        moveUp: "Move Up",
+        moveDown: "Move Down",
+        edit: "Edit",
+        formatCode: "Format Code",
+        viewCode: "View Details/Code",
     },
     he: {
         appName: "כספת הקופונים",
@@ -96,6 +103,13 @@ const translations = {
         sendAccess: "שלח גישה",
         decryptionFailed: "[פענוח נכשל]",
         id: "מזהה",
+        delete: "מחיקה",
+        confirmDelete: "האם אתם בטוחים שברצונכם למחוק את הקופון לצמיתות?",
+        moveUp: "הזזה למעלה",
+        moveDown: "הזזה למטה",
+        edit: "עריכה",
+        formatCode: "עצב קוד",
+        viewCode: "פרטים / קוד",
     }
 };
 

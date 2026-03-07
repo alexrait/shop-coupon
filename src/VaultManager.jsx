@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { cryptoUtils } from './lib/crypto';
+import { persistenceUtils } from './lib/persistence';
 import { useVault } from './VaultContext';
 import { useAuth } from './useAuth';
 import { Icons } from './components/icons';
@@ -44,6 +45,26 @@ export function VaultManager({ user }) {
         }
     };
 
+    const handleVaultClick = async (vault) => {
+        if (!user?.id) return;
+
+        // Try auto-unlock
+        try {
+            const persistedKey = await persistenceUtils.getKey(vault.id, user.id);
+            if (persistedKey) {
+                const publicKey = await cryptoUtils.importPublicKey(vault.public_key);
+                await setKeys(publicKey, persistedKey, vault.id, vault.name);
+                return;
+            }
+        } catch (err) {
+            console.warn("Auto-unlock failed, falling back to password:", err);
+        }
+
+        setUnlockingVault(vault);
+        setIsCreating(false);
+        setPassword('');
+    };
+
     const handleCreateVault = async (e) => {
         e.preventDefault();
         setActionLoading(true);
@@ -75,7 +96,7 @@ export function VaultManager({ user }) {
 
             const newVault = await res.json();
             setVaults([newVault, ...vaults]);
-            setKeys(rsaPair.publicKey, rsaPair.privateKey, newVault.id, newVault.name);
+            await setKeys(rsaPair.publicKey, rsaPair.privateKey, newVault.id, newVault.name);
 
             setIsCreating(false);
             setPassword('');
@@ -106,7 +127,7 @@ export function VaultManager({ user }) {
             const privateKey = await cryptoUtils.importPrivateKey(decryptedPrivStr);
             const publicKey = await cryptoUtils.importPublicKey(vault.public_key);
 
-            setKeys(publicKey, privateKey, vault.id, vault.name);
+            await setKeys(publicKey, privateKey, vault.id, vault.name);
             setUnlockingVault(null);
             setPassword('');
 
@@ -132,7 +153,7 @@ export function VaultManager({ user }) {
             </div>
 
             {isCreating && (
-                <Card className="border-primary/50 bg-primary/5 animate-in slide-in-from-top-4 duration-300">
+                <Card className="border-border bg-muted/30 animate-in slide-in-from-top-4 duration-300">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                             <Icons.Vault size={20} className="text-primary" /> {t('createVault')}
@@ -175,7 +196,7 @@ export function VaultManager({ user }) {
             )}
 
             {unlockingVault && (
-                <Card className="border-primary bg-primary/10 shadow-lg animate-in zoom-in-95 duration-300">
+                <Card className="border-border bg-muted/50 shadow-lg animate-in zoom-in-95 duration-300">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                             <Icons.LockOpen size={20} className="text-primary" /> {t('unlock')} "{unlockingVault.name}"
@@ -220,11 +241,11 @@ export function VaultManager({ user }) {
                     {vaults.map((vault) => (
                         <Card
                             key={vault.id}
-                            className="group cursor-pointer hover:border-primary transition-all hover:bg-primary/5 active:scale-95 text-center"
-                            onClick={() => { setUnlockingVault(vault); setIsCreating(false); setPassword(''); }}
+                            className="group cursor-pointer hover:border-border transition-all hover:bg-muted/50 active:scale-95 text-center"
+                            onClick={() => handleVaultClick(vault)}
                         >
                             <CardContent className="flex flex-col items-center justify-center p-8">
-                                <div className="p-4 rounded-full bg-secondary group-hover:bg-primary/20 transition-colors mb-4">
+                                <div className="p-4 rounded-full bg-secondary group-hover:bg-accent transition-colors mb-4">
                                     <Icons.Vault size={40} className="text-primary" />
                                 </div>
                                 <h4 className="font-semibold text-lg">{vault.name}</h4>
@@ -236,3 +257,4 @@ export function VaultManager({ user }) {
         </div>
     );
 }
+
