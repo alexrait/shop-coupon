@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
-import { History, RotateCcw, Loader2 } from 'lucide-react';
-import { useAuth } from './useAuth';
 import { useVault } from './VaultContext';
+import { useAuth } from './useAuth';
+import { Icons } from './components/icons';
+import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card';
+import { ScrollArea } from './components/ui/scroll-area';
+import { Separator } from './components/ui/separator';
+import { Badge } from './components/ui/badge';
+import { Loader2 } from 'lucide-react';
 
 export function CouponHistory() {
-    const { apiFetch } = useAuth();
     const { vaultId } = useVault();
+    const { apiFetch } = useAuth();
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -23,52 +28,69 @@ export function CouponHistory() {
                 const data = await res.json();
                 setLogs(data);
             }
-        } catch (e) {
-            console.error('Failed to load logs:', e);
+        } catch (err) {
+            console.error("Failed to fetch logs:", err);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleUndo = (logId) => {
-        alert('Undo functionality requires manual state reversal. For now, we have logged the action.');
-    };
-
     return (
-        <div className="card animate-fade-in mt-4" style={{ background: 'rgba(15, 23, 42, 0.8)' }}>
-            <h3 className="flex items-center gap-2 mb-4"><History size={20} /> Action History (30 Days)</h3>
-
-            {loading ? (
-                <div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div>
-            ) : logs.length === 0 ? (
-                <p className="text-center" style={{ color: 'var(--color-text-muted)' }}>No recent activity.</p>
-            ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {logs.map((log) => (
-                        <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'var(--color-surface)', borderRadius: 'var(--border-radius-md)' }}>
-                            <div>
-                                <span style={{ fontWeight: 600, color: log.action_type === 'USED' ? 'var(--color-secondary)' : 'var(--color-primary)' }}>
-                                    {log.action_type}
-                                </span>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
-                                    {new Date(log.created_at).toLocaleString()}
-                                </div>
-                            </div>
-
-                            {log.action_type === 'USED' && (
-                                <button
-                                    className="btn btn-secondary btn-sm"
-                                    title="Undo Action"
-                                    onClick={() => handleUndo(log.id)}
-                                    style={{ padding: '0.5rem' }}
-                                >
-                                    <RotateCcw size={16} />
-                                </button>
-                            )}
+        <Card className="h-full bg-card/60 border-primary/20 backdrop-blur-sm">
+            <CardHeader>
+                <CardTitle className="text-xl flex items-center gap-2">
+                    <Icons.History className="text-primary" /> Activity Feed
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+                <ScrollArea className="h-[500px] px-6">
+                    {loading ? (
+                        <div className="flex justify-center py-10">
+                            <Loader2 className="animate-spin text-primary opacity-50" />
                         </div>
-                    ))}
-                </div>
-            )}
-        </div>
+                    ) : logs.length === 0 ? (
+                        <div className="text-center py-20 text-muted-foreground italic text-sm">
+                            No recent activity in this vault.
+                        </div>
+                    ) : (
+                        <div className="space-y-6 py-4">
+                            {logs.map((log, i) => (
+                                <div key={log.id} className="relative">
+                                    {i !== logs.length - 1 && (
+                                        <div className="absolute left-[11px] top-6 w-[2px] h-full bg-border/40" />
+                                    )}
+                                    <div className="flex gap-4">
+                                        <div className="relative z-10 w-6 h-6 rounded-full bg-secondary flex items-center justify-center border-4 border-background shrink-0">
+                                            {log.action_type === 'DELETE' ? (
+                                                <Icons.Check size={10} className="text-primary" />
+                                            ) : (
+                                                <Icons.Add size={10} className="text-primary" />
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium leading-none mb-1">
+                                                {log.action_type === 'DELETE' ? 'Coupon marked used' : 'New coupon added'}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground truncate italic">
+                                                {log.coupon_title || "Untitled Coupon"}
+                                            </p>
+                                            <p className="text-[10px] text-muted-foreground mt-2 font-mono">
+                                                {new Date(log.created_at).toLocaleTimeString()} · {new Date(log.created_at).toLocaleDateString()}
+                                            </p>
+
+                                            {log.action_type === 'DELETE' && (
+                                                <Badge variant="outline" className="mt-2 text-[10px] h-5 border-primary/20 bg-primary/5 text-primary">
+                                                    Undo Available (30d)
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </ScrollArea>
+            </CardContent>
+        </Card>
     );
 }

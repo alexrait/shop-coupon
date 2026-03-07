@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Lock, Key, Plus, FolderLock, Unlock } from 'lucide-react';
 import { cryptoUtils } from './lib/crypto';
 import { useVault } from './VaultContext';
 import { useAuth } from './useAuth';
+import { Icons } from './components/icons';
+import { Button } from './components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './components/ui/card';
+import { Input } from './components/ui/input';
+import { Label } from './components/ui/label';
+import { Loader2 } from 'lucide-react';
 
 export function VaultManager({ user }) {
     const { apiFetch } = useAuth();
@@ -41,22 +46,16 @@ export function VaultManager({ user }) {
         e.preventDefault();
         setActionLoading(true);
         try {
-            // 1. Generate RSA Key Pair
             const rsaPair = await cryptoUtils.generateRSAKeyPair();
-
-            // 2. Generate Salt & Derive AES Key from Password
             const salt = cryptoUtils.generateSalt();
             const saltBuffer = cryptoUtils.base64ToArrayBuffer(salt);
             const aesKey = await cryptoUtils.deriveKeyFromPassword(password, new Uint8Array(saltBuffer));
 
-            // 3. Export Keys
             const pubBase64 = await cryptoUtils.exportPublicKey(rsaPair.publicKey);
             const privBase64 = await cryptoUtils.exportPrivateKey(rsaPair.privateKey);
 
-            // 4. Encrypt Private Key with AES (Password derived)
             const encryptedPriv = await cryptoUtils.encryptAES(privBase64, aesKey);
 
-            // Save to API
             const payload = {
                 name: vaultName,
                 salt,
@@ -74,11 +73,8 @@ export function VaultManager({ user }) {
 
             const newVault = await res.json();
             setVaults([newVault, ...vaults]);
-
-            // Save to active session automatically
             setKeys(rsaPair.publicKey, rsaPair.privateKey, newVault.id, newVault.name);
 
-            // Reset form
             setIsCreating(false);
             setPassword('');
             setVaultName('');
@@ -96,26 +92,19 @@ export function VaultManager({ user }) {
         setActionLoading(true);
         try {
             const vault = unlockingVault;
-
-            // 1. Derive AES key from entered password and vault's salt
             const saltBuffer = cryptoUtils.base64ToArrayBuffer(vault.salt);
             const aesKey = await cryptoUtils.deriveKeyFromPassword(password, new Uint8Array(saltBuffer));
 
-            // 2. Decrypt the Private Key
             const decryptedPrivStr = await cryptoUtils.decryptAES(
                 vault.encrypted_private_key,
                 vault.iv,
                 aesKey
             );
 
-            // 3. Import keys into memory
             const privateKey = await cryptoUtils.importPrivateKey(decryptedPrivStr);
             const publicKey = await cryptoUtils.importPublicKey(vault.public_key);
 
-            // 4. Activate vault in context!
             setKeys(publicKey, privateKey, vault.id, vault.name);
-
-            // Cleanup UI
             setUnlockingVault(null);
             setPassword('');
 
@@ -128,75 +117,117 @@ export function VaultManager({ user }) {
     };
 
     return (
-        <div className="card animate-fade-in mt-4">
-            <div className="flex items-center justify-between mb-4">
-                <h3><Key size={20} className="inline mr-2" /> Your Vaults</h3>
-                <button
-                    className="btn btn-primary"
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-semibold flex items-center gap-2">
+                    <Icons.Key className="text-primary" /> Your Vaults
+                </h3>
+                <Button
                     onClick={() => { setIsCreating(!isCreating); setUnlockingVault(null); setPassword(''); }}
-                    style={{ padding: '0.5rem 1rem' }}
                 >
-                    <Plus size={18} /> New Vault
-                </button>
+                    <Icons.Add size={18} className="mr-2" /> New Vault
+                </Button>
             </div>
 
             {isCreating && (
-                <form onSubmit={handleCreateVault} className="card animate-fade-in" style={{ background: 'rgba(0,0,0,0.2)', marginBottom: '1rem' }}>
-                    <h4 className="flex items-center gap-2"><Lock size={16} /> Create Encrypted Vault</h4>
-                    <p style={{ fontSize: '0.875rem' }}>This password secures your private key. Do not lose it.</p>
-
-                    <div className="form-group">
-                        <label className="form-label">Vault Name</label>
-                        <input type="text" className="form-input" required value={vaultName} onChange={(e) => setVaultName(e.target.value)} placeholder="e.g. Family Coupons" />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="form-label">Encryption Password</label>
-                        <input type="password" className="form-input" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Must be strong..." />
-                    </div>
-
-                    <div className="flex gap-2">
-                        <button type="submit" className="btn btn-primary" disabled={actionLoading || !password || !vaultName}>
-                            {actionLoading ? 'Encrypting...' : 'Generate Keys & Save Vault'}
-                        </button>
-                        <button type="button" className="btn btn-secondary" onClick={() => setIsCreating(false)}>Cancel</button>
-                    </div>
-                </form>
+                <Card className="border-primary/50 bg-primary/5 animate-in slide-in-from-top-4 duration-300">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                            <Icons.Vault size={20} className="text-primary" /> Create Encrypted Vault
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">This password secures your private key. Do not lose it.</p>
+                    </CardHeader>
+                    <form onSubmit={handleCreateVault}>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="vaultName">Vault Name</Label>
+                                <Input
+                                    id="vaultName"
+                                    required
+                                    value={vaultName}
+                                    onChange={(e) => setVaultName(e.target.value)}
+                                    placeholder="e.g. Shopping Vouchers"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="password">Encryption Password</Label>
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Must be strong..."
+                                />
+                            </div>
+                        </CardContent>
+                        <CardFooter className="flex gap-2">
+                            <Button type="submit" disabled={actionLoading || !password || !vaultName}>
+                                {actionLoading ? <Loader2 className="animate-spin mr-2" /> : <Icons.Shield size={18} className="mr-2" />}
+                                Generate Keys & Save Vault
+                            </Button>
+                            <Button type="button" variant="ghost" onClick={() => setIsCreating(false)}>Cancel</Button>
+                        </CardFooter>
+                    </form>
+                </Card>
             )}
 
             {unlockingVault && (
-                <form onSubmit={handleUnlockVault} className="card animate-fade-in" style={{ background: 'var(--color-secondary-mix)', marginBottom: '1rem', border: '1px solid var(--color-primary)' }}>
-                    <h4 className="flex items-center gap-2"><Unlock size={16} /> Unlock "{unlockingVault.name}"</h4>
-                    <p style={{ fontSize: '0.875rem' }}>Enter the exact vault password to decrypt and load your records.</p>
-                    <div className="form-group">
-                        <input type="password" autoFocus className="form-input" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Vault Password..." />
-                    </div>
-                    <div className="flex gap-2">
-                        <button type="submit" className="btn btn-primary" disabled={actionLoading || !password}>
-                            {actionLoading ? 'Decrypting...' : 'Unlock Vault'}
-                        </button>
-                        <button type="button" className="btn btn-secondary" onClick={() => { setUnlockingVault(null); setPassword(''); }}>Cancel</button>
-                    </div>
-                </form>
+                <Card className="border-primary bg-primary/10 shadow-lg animate-in zoom-in-95 duration-300">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                            <Icons.LockOpen size={20} className="text-primary" /> Unlock "{unlockingVault.name}"
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">Enter the exact vault password to decrypt and load your records.</p>
+                    </CardHeader>
+                    <form onSubmit={handleUnlockVault}>
+                        <CardContent>
+                            <Input
+                                type="password"
+                                autoFocus
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Vault Password..."
+                            />
+                        </CardContent>
+                        <CardFooter className="flex gap-2">
+                            <Button type="submit" disabled={actionLoading || !password} className="w-full">
+                                {actionLoading ? <Loader2 className="animate-spin mr-2" /> : <Icons.Check size={18} className="mr-2" />}
+                                Unlock Vault
+                            </Button>
+                            <Button type="button" variant="ghost" onClick={() => { setUnlockingVault(null); setPassword(''); }}>Cancel</Button>
+                        </CardFooter>
+                    </form>
+                </Card>
             )}
 
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '2rem' }}>Loading vaults...</div>
-            ) : vaults.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
-                    No vaults found. Create one to get started.
+                <div className="flex justify-center py-12">
+                    <Loader2 className="animate-spin text-primary" size={48} />
                 </div>
+            ) : vaults.length === 0 ? (
+                <Card className="bg-muted/30 border-dashed">
+                    <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                        <Icons.Folder size={48} className="mb-4 opacity-20" />
+                        <p>No vaults found. Create one to get started.</p>
+                    </CardContent>
+                </Card>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {vaults.map((vault) => (
-                        <div key={vault.id}
-                            className="card vault-item hover-scale"
-                            style={{ padding: '1.5rem', cursor: 'pointer', textAlign: 'center', border: '1px solid var(--color-border)' }}
+                        <Card
+                            key={vault.id}
+                            className="group cursor-pointer hover:border-primary transition-all hover:bg-primary/5 active:scale-95"
                             onClick={() => { setUnlockingVault(vault); setIsCreating(false); setPassword(''); }}
                         >
-                            <FolderLock size={32} color="var(--color-primary)" style={{ margin: '0 auto 1rem' }} />
-                            <h4 style={{ margin: '0' }}>{vault.name}</h4>
-                        </div>
+                            <CardContent className="flex flex-col items-center justify-center p-8">
+                                <div className="p-4 rounded-full bg-secondary group-hover:bg-primary/20 transition-colors mb-4">
+                                    <Icons.Vault size={40} className="text-primary" />
+                                </div>
+                                <h4 className="font-semibold text-lg">{vault.name}</h4>
+                            </CardContent>
+                        </Card>
                     ))}
                 </div>
             )}

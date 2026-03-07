@@ -165,24 +165,26 @@ export const cryptoUtils = {
     },
 
     /**
-     * Encrypt small data (like an exported AES key) with an RSA Public Key
+     * Encrypt data with an RSA Public Key
+     * Can take a string or Uint8Array
      */
-    async encryptRSA(dataBase64, publicKey) {
-        const data = this.base64ToArrayBuffer(dataBase64);
+    async encryptRSA(data, publicKey) {
+        const buffer = typeof data === 'string' ? new TextEncoder().encode(data) : data;
         const ciphertext = await window.crypto.subtle.encrypt(
             {
                 name: "RSA-OAEP"
             },
             publicKey,
-            data
+            buffer
         );
         return this.arrayBufferToBase64(ciphertext);
     },
 
     /**
-     * Decrypt small data with an RSA Private Key
+     * Decrypt data with an RSA Private Key
+     * Returns a decrypted buffer string or raw
      */
-    async decryptRSA(cipherBase64, privateKey) {
+    async decryptRSA(cipherBase64, privateKey, asString = true) {
         const ciphertext = this.base64ToArrayBuffer(cipherBase64);
         const decrypted = await window.crypto.subtle.decrypt(
             {
@@ -191,7 +193,11 @@ export const cryptoUtils = {
             privateKey,
             ciphertext
         );
-        return this.arrayBufferToBase64(decrypted);
+
+        if (asString) {
+            return new TextDecoder().decode(decrypted);
+        }
+        return new Uint8Array(decrypted);
     },
 
     // --- Utility ---

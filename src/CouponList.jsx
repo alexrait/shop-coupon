@@ -1,8 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
-import { Package, Tag, Clock, Image as ImageIcon, UserPlus, X, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { cryptoUtils } from './lib/crypto';
 import { useVault } from './VaultContext';
 import { useAuth } from './useAuth';
+import { Icons } from './components/icons';
+import { Button } from './components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './components/ui/card';
+import { Input } from './components/ui/input';
+import { Label } from './components/ui/label';
+import { Badge } from './components/ui/badge';
+import { Separator } from './components/ui/separator';
 
 export function CouponList() {
     const { privateKey, publicKey, vaultId, vaultName } = useVault();
@@ -28,7 +35,7 @@ export function CouponList() {
         if (vaultId) {
             fetchCoupons();
         }
-    }, [vaultId, privateKey]); // Depend on privateKey to re-decrypt if keys change
+    }, [vaultId, privateKey]);
 
     const fetchCoupons = async () => {
         if (!privateKey) return;
@@ -37,20 +44,12 @@ export function CouponList() {
             const res = await apiFetch(`/api/coupons?list_id=${vaultId}`);
             if (res.ok) {
                 const data = await res.json();
-
-                // Decrypt coupons using Hybrid Decryption
                 const decrypted = await Promise.all(data.map(async (row) => {
                     const encrypted = row.encrypted_payload;
                     try {
-                        // 1. Decrypt the symmetric AES key using RSA Private Key
                         const aesKeyBase64 = await cryptoUtils.decryptRSA(encrypted.encrypted_aes_key, privateKey);
-
-                        // 2. Import the AES Key
                         const aesKey = await cryptoUtils.importAESKey(aesKeyBase64);
-
-                        // 3. Decrypt the payload using the AES key
                         const payloadStr = await cryptoUtils.decryptAES(encrypted.encrypted_data, encrypted.iv, aesKey);
-
                         const payload = JSON.parse(payloadStr);
                         return { ...payload, id: row.id, created_at: row.created_at };
                     } catch (err) {
@@ -58,7 +57,6 @@ export function CouponList() {
                         return { title: "[Decryption Failed]", id: row.id, error: true };
                     }
                 }));
-
                 setCoupons(decrypted);
             }
         } catch (err) {
@@ -88,18 +86,9 @@ export function CouponList() {
             const payload = { title, code, value, imageBase64 };
             const payloadString = JSON.stringify(payload);
 
-            // --- Hybrid Encryption Flow ---
-
-            // 1. Generate one-time symmetric AES key
             const aesKey = await cryptoUtils.generateAESKey();
-
-            // 2. Encrypt large payload with AES
             const { cipher, iv } = await cryptoUtils.encryptAES(payloadString, aesKey);
-
-            // 3. Export AES key to base64
             const aesKeyBase64 = await cryptoUtils.exportAESKey(aesKey);
-
-            // 4. Encrypt the AES key with RSA Public Key
             const encryptedAesKey = await cryptoUtils.encryptRSA(aesKeyBase64, publicKey);
 
             const hybridPayload = {
@@ -118,11 +107,11 @@ export function CouponList() {
                 setIsAdding(false);
                 setTitle(''); setCode(''); setValue(''); setImageBase64('');
             } else {
-                alert("Failed to save coupon to server");
+                alert("Failed to save coupon");
             }
         } catch (err) {
             console.error(err);
-            alert('Encryption failed. Hybrid approach should support large images.');
+            alert('Encryption failed.');
         } finally {
             setLoading(false);
         }
@@ -138,131 +127,180 @@ export function CouponList() {
             });
 
             if (res.ok) {
-                alert(`Invite sent to ${inviteEmail}! Remember to share the vault password with them securely.`);
+                alert(`Invite sent to ${inviteEmail}!`);
                 setInviteEmail('');
                 setIsInviting(false);
             } else {
                 const errData = await res.json();
-                alert(errData.error || "Failed to invite user");
+                alert(errData.error || "Failed to invite");
             }
         } catch (err) {
             console.error(err);
-            alert("Invite failed");
         } finally {
             setInviteLoading(false);
         }
     };
 
     const markUsed = async (id) => {
-        if (!confirm("Are you sure you want to mark this coupon as used?")) return;
+        if (!confirm("Mark as used?")) return;
         try {
             const res = await apiFetch(`/api/coupons?list_id=${vaultId}&id=${id}`, {
                 method: 'DELETE'
             });
-            if (res.ok) {
-                fetchCoupons();
-            }
+            if (res.ok) fetchCoupons();
         } catch (err) {
             console.error(err);
         }
     };
 
     return (
-        <div className="card animate-fade-in mt-4">
-            <div className="flex items-center justify-between mb-4">
-                <div>
-                    <h3 className="flex items-center gap-2" style={{ margin: 0 }}><Tag size={20} /> {vaultName}</h3>
-                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Vault ID: {vaultId}</p>
+        <Card className="shadow-xl bg-card/40 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <div className="space-y-1">
+                    <CardTitle className="flex items-center gap-2">
+                        <Icons.Cart size={24} className="text-primary" /> {vaultName}
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Icons.Vault size={12} /> ID: {vaultId}
+                    </p>
                 </div>
                 <div className="flex gap-2">
-                    <button className="btn btn-secondary flex items-center gap-2" onClick={() => setIsInviting(!isInviting)}>
-                        <UserPlus size={18} /> Invite
-                    </button>
-                    <button className="btn btn-primary" onClick={() => setIsAdding(!isAdding)}>Add Coupon</button>
+                    <Button variant="outline" size="sm" onClick={() => setIsInviting(!isInviting)}>
+                        <Icons.UserPlus size={16} className="mr-2" /> Share
+                    </Button>
+                    <Button size="sm" onClick={() => setIsAdding(!isAdding)}>
+                        <Icons.Add size={16} className="mr-2" /> Add
+                    </Button>
                 </div>
-            </div>
+            </CardHeader>
+            <CardContent>
+                <Separator className="mb-6 opacity-20" />
 
-            {isInviting && (
-                <form onSubmit={handleInvite} className="card animate-fade-in" style={{ background: 'var(--color-secondary-mix)', marginBottom: '1rem' }}>
-                    <div className="flex justify-between items-center mb-2">
-                        <h4 style={{ margin: 0 }}>Invite Member</h4>
-                        <X size={18} style={{ cursor: 'pointer' }} onClick={() => setIsInviting(false)} />
+                {isInviting && (
+                    <Card className="mb-6 border-primary/30 bg-primary/5 animate-in slide-in-from-right-4 duration-300">
+                        <CardHeader className="py-4">
+                            <CardTitle className="text-sm">Invite Team Member</CardTitle>
+                        </CardHeader>
+                        <form onSubmit={handleInvite}>
+                            <CardContent className="py-0 pb-4">
+                                <Input
+                                    type="email"
+                                    required
+                                    value={inviteEmail}
+                                    onChange={e => setInviteEmail(e.target.value)}
+                                    placeholder="Enter Gmail address..."
+                                />
+                            </CardContent>
+                            <CardFooter className="flex gap-2 py-4 pt-0">
+                                <Button size="sm" className="w-full" disabled={inviteLoading}>
+                                    {inviteLoading ? <Loader2 className="animate-spin mr-2" size={14} /> : <Icons.Share size={14} className="mr-2" />}
+                                    Send Access
+                                </Button>
+                                <Button size="sm" variant="ghost" type="button" onClick={() => setIsInviting(false)}>
+                                    <Icons.Logout size={14} />
+                                </Button>
+                            </CardFooter>
+                        </form>
+                    </Card>
+                )}
+
+                {isAdding && (
+                    <Card className="mb-6 border-primary bg-primary/10 shadow-lg animate-in fade-in duration-300">
+                        <CardHeader>
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <Icons.Coupon size={20} className="text-primary" /> New Secure Coupon
+                            </CardTitle>
+                        </CardHeader>
+                        <form onSubmit={handleSaveCoupon}>
+                            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Title</Label>
+                                    <Input required value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Amazon 20% Off" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Coupon Code</Label>
+                                    <Input value={code} onChange={e => setCode(e.target.value)} placeholder="e.g. SAVE20B" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Value / Discount</Label>
+                                    <Input value={value} onChange={e => setValue(e.target.value)} placeholder="e.g. $10.00" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Image (Optional)</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Input type="file" accept="image/*" onChange={handleImageChange} className="cursor-pointer file:text-primary file:font-bold" />
+                                        {imageBase64 && <Icons.Check className="text-green-500" />}
+                                    </div>
+                                </div>
+                            </CardContent>
+                            <CardFooter className="flex gap-2 justify-end">
+                                <Button variant="ghost" type="button" onClick={() => setIsAdding(false)}>Cancel</Button>
+                                <Button type="submit" disabled={loading}>
+                                    {loading ? <Loader2 className="animate-spin mr-2" /> : <Icons.Shield size={18} className="mr-2" />}
+                                    Protect & Save
+                                </Button>
+                            </CardFooter>
+                        </form>
+                    </Card>
+                )}
+
+                {fetching ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground animate-pulse">
+                        <Icons.Cart size={48} className="mb-4 opacity-20" />
+                        <p>Decrypting your shopping vault...</p>
                     </div>
-                    <div className="form-group">
-                        <input type="email" className="form-input" required value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="User's Gmail address..." />
+                ) : coupons.length === 0 ? (
+                    <div className="text-center py-20 bg-muted/20 border-2 border-dashed rounded-xl">
+                        <Icons.Coupon size={64} className="mx-auto mb-4 opacity-10" />
+                        <p className="text-muted-foreground">This vault is currently empty.</p>
+                        <Button variant="link" onClick={() => setIsAdding(true)}>Add your first coupon</Button>
                     </div>
-                    <button type="submit" className="btn btn-primary w-full" disabled={inviteLoading}>
-                        {inviteLoading ? 'Sending...' : 'Add Member to Vault'}
-                    </button>
-                </form>
-            )}
+                ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                        {coupons.map((c) => (
+                            <Card key={c.id} className="group overflow-hidden hover:border-primary/50 transition-all hover:bg-muted/30">
+                                <div className="flex items-center">
+                                    <div className="flex-1 p-6">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h4 className={`font-bold text-lg ${c.error ? 'text-destructive' : ''}`}>{c.title}</h4>
+                                            {c.value && <Badge variant="secondary" className="font-mono">{c.value}</Badge>}
+                                        </div>
+                                        {c.code && (
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <code className="bg-primary/10 text-primary px-3 py-1 rounded font-mono text-lg tracking-wider border border-primary/20">
+                                                    {c.code}
+                                                </code>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigator.clipboard.writeText(c.code)}>
+                                                    <Icons.Share size={14} />
+                                                </Button>
+                                            </div>
+                                        )}
+                                        <p className="text-[10px] text-muted-foreground mt-4 flex items-center gap-1 uppercase tracking-widest font-semibold">
+                                            <Icons.History size={10} /> Added {new Date(c.created_at).toLocaleDateString()}
+                                        </p>
+                                    </div>
 
-            {isAdding && (
-                <form onSubmit={handleSaveCoupon} className="card" style={{ background: 'rgba(0,0,0,0.2)', marginBottom: '1rem' }}>
-                    <h4 className="flex items-center gap-2"><Package size={16} /> New Secured Coupon</h4>
+                                    {c.imageBase64 ? (
+                                        <div className="w-32 h-32 bg-white flex items-center justify-center border-l shrink-0">
+                                            <img src={c.imageBase64} alt="" className="max-w-[80%] max-h-[80%] object-contain" />
+                                        </div>
+                                    ) : (
+                                        <div className="w-32 h-32 bg-secondary/30 flex items-center justify-center border-l shrink-0">
+                                            <Icons.Image size={32} className="opacity-10" />
+                                        </div>
+                                    )}
 
-                    <div className="form-group">
-                        <label className="form-label">Title</label>
-                        <input type="text" className="form-input" required value={title} onChange={e => setTitle(e.target.value)} />
+                                    <div className="p-4 bg-muted/50 group-hover:bg-primary/10 transition-colors border-l shrink-0 self-stretch flex flex-col justify-center">
+                                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary" onClick={() => markUsed(c.id)}>
+                                            <Icons.History size={20} />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </Card>
+                        ))}
                     </div>
-
-                    <div className="form-group">
-                        <label className="form-label">Code / Barcode Value</label>
-                        <input type="text" className="form-input" value={code} onChange={e => setCode(e.target.value)} />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="form-label">Monetary Value / Discount</label>
-                        <input type="text" className="form-input" value={value} onChange={e => setValue(e.target.value)} />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="form-label flex items-center gap-2"><ImageIcon size={16} /> Image Attachment</label>
-                        <input type="file" ref={fileInputRef} accept="image/*" onChange={handleImageChange} className="form-input" />
-                        {imageBase64 && (
-                            <div style={{ position: 'relative', display: 'inline-block', marginTop: '0.5rem' }}>
-                                <img src={imageBase64} alt="Preview" style={{ maxWidth: '100px', borderRadius: '4px' }} />
-                                <X size={14} style={{ position: 'absolute', top: -5, right: -5, background: 'var(--color-bg)', borderRadius: '50%', cursor: 'pointer' }} onClick={() => setImageBase64('')} />
-                            </div>
-                        )}
-                    </div>
-
-                    <button type="submit" className="btn btn-primary mt-2" disabled={loading || !title}>
-                        {loading ? 'Encrypting & Saving...' : 'Save Securely'}
-                    </button>
-                </form>
-            )}
-
-            {fetching ? (
-                <div className="flex flex-col items-center py-8 text-muted">
-                    <Loader2 className="animate-spin mb-2" size={32} />
-                    <p>Decrypting vault content...</p>
-                </div>
-            ) : coupons.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
-                    No coupons in this vault yet.
-                </div>
-            ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
-                    {coupons.map((c) => (
-                        <div key={c.id} className="card coupon-card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ flex: 1 }}>
-                                <h4 style={{ margin: 0, color: c.error ? 'var(--color-error)' : 'inherit' }}>{c.title}</h4>
-                                {c.code && <code className="block mt-1" style={{ color: 'var(--color-primary)', fontSize: '1rem' }}>{c.code}</code>}
-                                {c.value && <p style={{ margin: '0.25rem 0 0', fontWeight: 'bold' }}>{c.value}</p>}
-                                <p style={{ margin: '0.5rem 0 0', fontSize: '0.7rem', opacity: 0.5 }}>Added {new Date(c.created_at).toLocaleDateString()}</p>
-                            </div>
-
-                            {c.imageBase64 && (
-                                <img src={c.imageBase64} alt="" style={{ width: '80px', height: '80px', objectFit: 'contain', background: '#fff', borderRadius: '4px', margin: '0 1rem' }} />
-                            )}
-                            <button className="btn btn-secondary btn-sm" title="Mark Used" onClick={() => markUsed(c.id)}>
-                                <Clock size={16} />
-                            </button>
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
+                )}
+            </CardContent>
+        </Card>
     );
 }
