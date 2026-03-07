@@ -4,12 +4,22 @@ import webpush from 'web-push';
 // In production, these should be environment variables:
 // VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
 const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || 'BLkj4FP1wgWtz3lnUWfC3Le8xm9zfKKcOqWbMr6jR6p9Q7iN-2lhxTq7TlY68U30C1oL2ltuM6uoT8f9yB1Trz4';
-const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || 'your-private-key-here'; // Must be set in Netlify
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
 const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:example@example.com';
 
-webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+if (vapidPrivateKey && vapidPrivateKey !== 'your-private-key-here') {
+    try {
+        webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+    } catch (err) {
+        console.error('Failed to set VAPID details:', err);
+    }
+}
 
 export const notifyMembers = async (sql, listId, excludeUserId, type, payload) => {
+    if (!vapidPrivateKey || vapidPrivateKey === 'your-private-key-here') {
+        console.warn('VAPID_PRIVATE_KEY not set. Skipping notification.');
+        return;
+    }
     try {
         // Find all members of the list
         const members = await sql`
