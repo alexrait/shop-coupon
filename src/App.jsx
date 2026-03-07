@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
-import { useAuth } from './useAuth';
+import { AuthProvider, useAuth } from './AuthContext';
 import { VaultProvider, useVault } from './VaultContext';
 import { VaultManager } from './VaultManager';
 import { CouponList } from './CouponList';
@@ -228,12 +228,15 @@ function AppContent() {
 
 function App() {
   return (
-    <LanguageProvider>
-      <VaultProvider>
-        <AppContent />
-      </VaultProvider>
-    </LanguageProvider>
+    <AuthProvider>
+      <LanguageProvider>
+        <VaultProvider>
+          <AppContent />
+        </VaultProvider>
+      </LanguageProvider>
+    </AuthProvider>
   );
 }
 
 export default App;
+
