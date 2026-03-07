@@ -7,6 +7,7 @@ import {
     PointerSensor, 
     useSensor, 
     useSensors,
+    DragOverlay
 } from '@dnd-kit/core';
 import {
     arrayMove,
@@ -219,15 +220,41 @@ export function CouponList() {
         }
     };
 
-    const expiringSoonCount = coupons.filter(c => {
-        if (!c.expiryDate || c.status === 'used' || c.status === 'deleted') return false;
-        const expiry = new Date(c.expiryDate);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const diff = expiry - today;
-        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-        return days >= 0 && days <= 7;
-    }).length;
+    const handleInvite = async (e) => {
+        e.preventDefault();
+        setInviteLoading(true);
+        try {
+            const res = await apiFetch(`/api/invites`, {
+                method: 'POST',
+                body: JSON.stringify({ list_id: vaultId, email: inviteEmail, list_type: 'vault' })
+            });
+            if (res.ok) {
+                setInviteEmail('');
+                fetchMembers();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'User not found or already invited.');
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setInviteLoading(false);
+        }
+    };
+
+    const handleRemoveMember = async (targetUserId) => {
+        if (!confirm("Remove this member?")) return;
+        try {
+            const res = await apiFetch(`/api/invites?list_id=${vaultId}&list_type=vault&user_id=${targetUserId}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                fetchMembers();
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     const handleSaveCoupon = async (e) => {
         if (e) e.preventDefault();
@@ -263,7 +290,6 @@ export function CouponList() {
             if (res.ok) {
                 await fetchCoupons();
                 if (!editingCoupon) {
-                    // Reset for next multi-add
                     setTitle(''); setCode(''); setValue(''); setExpiryDate(''); setImageBase64('');
                     if (fileInputRef.current) fileInputRef.current.value = '';
                 } else {
@@ -354,7 +380,8 @@ export function CouponList() {
 
         try {
             await Promise.all(updatedItems.map((c, idx) => {
-                if (c.position !== coupons.find(orig => orig.id === c.id)?.position) {
+                const orig = coupons.find(o => o.id === c.id);
+                if (orig && c.position !== orig.position) {
                     return apiFetch(`/api/coupons?list_id=${vaultId}&id=${c.id}`, {
                         method: 'PATCH',
                         body: JSON.stringify({ position: c.position })
@@ -368,41 +395,15 @@ export function CouponList() {
         }
     };
 
-    const handleInvite = async (e) => {
-        e.preventDefault();
-        setInviteLoading(true);
-        try {
-            const res = await apiFetch(`/api/invites`, {
-                method: 'POST',
-                body: JSON.stringify({ list_id: vaultId, email: inviteEmail, list_type: 'vault' })
-            });
-            if (res.ok) {
-                setInviteEmail('');
-                fetchMembers();
-            } else {
-                const data = await res.json();
-                alert(data.error || 'User not found or already invited.');
-            }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setInviteLoading(false);
-        }
-    };
-
-    const handleRemoveMember = async (targetUserId) => {
-        if (!confirm("Remove this member?")) return;
-        try {
-            const res = await apiFetch(`/api/invites?list_id=${vaultId}&list_type=vault&user_id=${targetUserId}`, {
-                method: 'DELETE'
-            });
-            if (res.ok) {
-                fetchMembers();
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    };
+    const expiringSoonCount = coupons.filter(c => {
+        if (!c.expiryDate || c.status === 'used' || c.status === 'deleted') return false;
+        const expiry = new Date(c.expiryDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diff = expiry - today;
+        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        return days >= 0 && days <= 7;
+    }).length;
 
     return (
         <>

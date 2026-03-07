@@ -337,9 +337,8 @@ export function ShoppingCartView() {
                 body: JSON.stringify({ list_id: listId, email: inviteEmail, list_type: 'shopping' })
             });
             if (res.ok) {
-                alert('Invite sent!');
                 setInviteEmail('');
-                setIsInviting(false);
+                fetchMembers();
             } else {
                 const data = await res.json();
                 alert(data.error || 'User not found or already invited.');
