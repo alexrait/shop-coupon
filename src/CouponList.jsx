@@ -147,6 +147,7 @@ function SortableCouponItem({ coupon, idx, rtl, t, startEdit, markStatus }) {
 export function CouponList() {
     const { privateKey, publicKey, vaultId, vaultName, updateVaultName, closeVault } = useVault();
     const { apiFetch } = useAuth();
+    const navigate = useNavigate();
     const { t, rtl } = useLanguage();
 
     const [coupons, setCoupons] = useState([]);
@@ -422,7 +423,7 @@ export function CouponList() {
                             variant="ghost" 
                             size="icon" 
                             className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all shrink-0 border border-transparent hover:border-primary/20" 
-                            onClick={closeVault}
+                            onClick={() => { closeVault(); navigate('/dashboard'); }}
                             title={t('back')}
                         >
                             {rtl ? <Icons.ChevronRight size={24} /> : <Icons.ChevronLeft size={24} />}

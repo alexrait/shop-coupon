@@ -97,25 +97,39 @@ const Dashboard = ({ user }) => {
   const { publicKey } = useVault();
   const { t } = useLanguage();
 
+  if (publicKey) {
+    return <Navigate to="/vault" replace />;
+  }
+
   return (
     <div className="container mx-auto py-8 px-4 animate-in fade-in duration-700">
       <div className="mb-8">
         <h2 className="text-3xl font-bold mb-1">{t('welcomeBack', { name: user?.user_metadata?.full_name || user?.email?.split('@')[0] })}</h2>
         <p className="text-muted-foreground">{t('tagline')}</p>
       </div>
+      <VaultManager user={user} />
+    </div>
+  );
+};
 
-      {!publicKey ? (
-        <VaultManager user={user} />
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <CouponList />
-          </div>
-          <div className="lg:col-span-1">
-            <CouponHistory />
-          </div>
+const VaultView = ({ user }) => {
+  const { publicKey } = useVault();
+  const { t } = useLanguage();
+
+  if (!publicKey) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return (
+    <div className="container mx-auto py-8 px-4 animate-in fade-in duration-700">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <CouponList />
         </div>
-      )}
+        <div className="lg:col-span-1">
+          <CouponHistory />
+        </div>
+      </div>
     </div>
   );
 };
@@ -169,6 +183,9 @@ function AppContent() {
             } />
             <Route path="/dashboard" element={
               user ? <Dashboard user={user} /> : <Navigate to="/" replace />
+            } />
+            <Route path="/vault" element={
+              user ? <VaultView user={user} /> : <Navigate to="/" replace />
             } />
             <Route path="/security" element={<SecurityPage />} />
           </Routes>
