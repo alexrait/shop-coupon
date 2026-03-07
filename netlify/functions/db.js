@@ -13,6 +13,25 @@ export const getDb = () => {
   }
 };
 
+export const ensureDbReady = async (sql, user) => {
+  if (!user) return;
+  
+  // 1. Check if schema exists, if not, init it
+  try {
+    await sql`SELECT 1 FROM shopcoupon.users LIMIT 1`;
+  } catch (e) {
+    console.log("Schema missing, initializing...");
+    await initSchema();
+  }
+
+  // 2. Ensure current user exists in our users table
+  await sql`
+    INSERT INTO shopcoupon.users (id, email)
+    VALUES (${user.sub}, ${user.email})
+    ON CONFLICT (id) DO NOTHING
+  `;
+};
+
 export const initSchema = async () => {
   const sql = getDb();
 

@@ -14,6 +14,9 @@ export const handler = async (event, context) => {
     }
 
     try {
+        const { ensureDbReady } = await import('./db.js');
+        await ensureDbReady(sql, user);
+
         // Security check: ensure user has access to this list
         const [access] = await sql`
             SELECT 1 FROM shopcoupon.lists l
@@ -72,13 +75,22 @@ export const handler = async (event, context) => {
 
             if (Object.keys(updates).length === 0) return { statusCode: 400, body: 'nothing to update' };
 
-            const [updated] = await sql`
-                UPDATE shopcoupon.coupons 
-                SET ${sql(updates, Object.keys(updates))}, 
-                    updated_at = CURRENT_TIMESTAMP 
-                WHERE id = ${couponId} AND list_id = ${listId}
-                RETURNING *
-            `;
+            let updated;
+            if (status && position !== undefined && encrypted_payload) {
+                [updated] = await sql`UPDATE shopcoupon.coupons SET status=${status}, position=${position}, encrypted_payload=${encrypted_payload}, updated_at=CURRENT_TIMESTAMP WHERE id=${couponId} AND list_id=${listId} RETURNING *`;
+            } else if (status && position !== undefined) {
+                [updated] = await sql`UPDATE shopcoupon.coupons SET status=${status}, position=${position}, updated_at=CURRENT_TIMESTAMP WHERE id=${couponId} AND list_id=${listId} RETURNING *`;
+            } else if (status && encrypted_payload) {
+                [updated] = await sql`UPDATE shopcoupon.coupons SET status=${status}, encrypted_payload=${encrypted_payload}, updated_at=CURRENT_TIMESTAMP WHERE id=${couponId} AND list_id=${listId} RETURNING *`;
+            } else if (position !== undefined && encrypted_payload) {
+                [updated] = await sql`UPDATE shopcoupon.coupons SET position=${position}, encrypted_payload=${encrypted_payload}, updated_at=CURRENT_TIMESTAMP WHERE id=${couponId} AND list_id=${listId} RETURNING *`;
+            } else if (status) {
+                [updated] = await sql`UPDATE shopcoupon.coupons SET status=${status}, updated_at=CURRENT_TIMESTAMP WHERE id=${couponId} AND list_id=${listId} RETURNING *`;
+            } else if (position !== undefined) {
+                [updated] = await sql`UPDATE shopcoupon.coupons SET position=${position}, updated_at=CURRENT_TIMESTAMP WHERE id=${couponId} AND list_id=${listId} RETURNING *`;
+            } else if (encrypted_payload) {
+                [updated] = await sql`UPDATE shopcoupon.coupons SET encrypted_payload=${encrypted_payload}, updated_at=CURRENT_TIMESTAMP WHERE id=${couponId} AND list_id=${listId} RETURNING *`;
+            }
 
             if (status === 'used') {
                 await sql`

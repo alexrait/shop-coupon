@@ -9,6 +9,9 @@ export const handler = async (event, context) => {
     const method = event.httpMethod;
 
     try {
+        const { ensureDbReady } = await import('./db.js');
+        await ensureDbReady(sql, user);
+
         if (method === 'POST') {
             const { list_id, email } = JSON.parse(event.body);
 

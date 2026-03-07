@@ -11,8 +11,11 @@ export const handler = async (event, context) => {
     if (!listId) return { statusCode: 400, body: 'list_id required' };
 
     try {
+        const { ensureDbReady } = await import('./db.js');
+        await ensureDbReady(sql, user);
+
         const logs = await sql`
-            SELECT al.*, c.encrypted_payload->>'title' as coupon_title_hint
+            SELECT al.*
             FROM shopcoupon.action_logs al
             LEFT JOIN shopcoupon.coupons c ON al.coupon_id = c.id
             WHERE al.list_id = ${listId}
