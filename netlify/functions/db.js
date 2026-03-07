@@ -95,8 +95,13 @@ export const runMigrations = async (sql) => {
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           user_id UUID REFERENCES shopcoupon.users(id) ON DELETE CASCADE,
           subscription JSONB NOT NULL,
+          settings JSONB DEFAULT '{"newItem": true, "removeItem": true, "updateItem": true}',
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
+      ELSE
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='shopcoupon' AND table_name='push_subscriptions' AND column_name='settings') THEN
+          ALTER TABLE shopcoupon.push_subscriptions ADD COLUMN settings JSONB DEFAULT '{"newItem": true, "removeItem": true, "updateItem": true}';
+        END IF;
       END IF;
     END $$;
   `;

@@ -1,4 +1,5 @@
 import { getDb, ensureDbReady } from './db.js';
+import { notifyMembers } from './push.js';
 
 export const handler = async (event, context) => {
     const user = context.clientContext?.user;
@@ -16,15 +17,20 @@ export const handler = async (event, context) => {
     try {
         await ensureDbReady(sql, user);
 
-        const [access] = await sql`
-            SELECT 1 FROM shopcoupon.shopping_lists sl
+        const [listInfo] = await sql`
+            SELECT sl.name, 
+                   CASE WHEN sl.owner_id = ${userId} OR slm.user_id = ${userId} THEN 1 ELSE 0 END as has_access
+            FROM shopcoupon.shopping_lists sl
             LEFT JOIN shopcoupon.shopping_list_members slm ON sl.id = slm.list_id
-            WHERE sl.id = ${listId} AND (sl.owner_id = ${userId} OR slm.user_id = ${userId})
+            WHERE sl.id = ${listId}
+            LIMIT 1
         `;
 
-        if (!access) {
+        if (!listInfo || !listInfo.has_access) {
             return { statusCode: 403, body: 'Forbidden - No access to this shopping list' };
         }
+        
+        const listName = listInfo.name;
 
         if (method === 'GET') {
             const itemName = event.queryStringParameters?.name;
@@ -68,6 +74,13 @@ export const handler = async (event, context) => {
                 VALUES (${listId}, ${encrypted_name}, ${quantity || 1}, ${nextPos})
                 RETURNING *
             `;
+
+            // Notify members
+            await notifyMembers(sql, listId, userId, 'addItem', {
+                title: `${listName}: Item Added`,
+                body: `New item added: ${encrypted_name}`,
+                url: `/shopping-list/${listId}`
+            });
 
             return { statusCode: 201, body: JSON.stringify(newItem) };
         }
@@ -116,6 +129,15 @@ export const handler = async (event, context) => {
 
             const [updated] = await sql.query(query, values);
 
+            if (updated) {
+                // Notify members
+                await notifyMembers(sql, listId, userId, 'updateItem', {
+                    title: `${listName}: Item Updated`,
+                    body: `Item updated: ${updated.encrypted_name}`,
+                    url: `/shopping-list/${listId}`
+                });
+            }
+
             return { statusCode: 200, body: JSON.stringify(updated) };
         }
 
@@ -123,10 +145,22 @@ export const handler = async (event, context) => {
             const itemId = event.queryStringParameters?.id;
             if (!itemId) return { statusCode: 400, body: 'item id required' };
 
+            // Get item name before delete
+            const [item] = await sql`SELECT encrypted_name FROM shopcoupon.shopping_items WHERE id = ${itemId} AND list_id = ${listId}`;
+
             await sql`
                 DELETE FROM shopcoupon.shopping_items 
                 WHERE id = ${itemId} AND list_id = ${listId}
             `;
+
+            if (item) {
+                // Notify members
+                await notifyMembers(sql, listId, userId, 'removeItem', {
+                    title: `${listName}: Item Removed`,
+                    body: `Item removed: ${item.encrypted_name}`,
+                    url: `/shopping-list/${listId}`
+                });
+            }
 
             return { statusCode: 204, body: '' };
         }
