@@ -273,11 +273,7 @@ export function ShoppingCartView() {
     };
 
     const startEdit = (item) => {
-        setEditingItem(item);
-        setItemName(item.encrypted_name || '');
-        setQuantity(item.quantity || 1);
-        setNote(item.note || '');
-        setIsDialogOpen(true);
+        navigate(`/shopping-list/${listId}/item/${item.id}`);
     };
 
     const handleStatusChange = async (id, status) => {

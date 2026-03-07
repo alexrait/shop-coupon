@@ -6,6 +6,7 @@ import { VaultManager } from './VaultManager';
 import { CouponList } from './CouponList';
 import { ShoppingListManager } from './ShoppingListManager';
 import { ShoppingCartView } from './ShoppingCartView';
+import ShoppingItemEditPage from './ShoppingItemEditPage';
 import { ActivityPage } from './ActivityPage';
 import { NotificationSettings } from './components/PushNotifications';
 import { Icons } from './components/icons';
@@ -196,6 +197,9 @@ function AppContent() {
             <Route path="/shopping-list/:listId" element={
               user ? <ShoppingCartView /> : <Navigate to="/" replace />
             } />
+            <Route path="/shopping-list/:listId/item/:itemId" element={
+              user ? <ShoppingItemEditPage /> : <Navigate to="/" replace />
+            } />
             <Route path="/activity" element={
               user ? <ActivityPage /> : <Navigate to="/" replace />
             } />
@@ -213,7 +217,7 @@ function AppContent() {
             <div className="flex gap-4 text-sm font-medium text-muted-foreground">
               <Link to="/privacy" className="hover:text-primary transition-colors cursor-pointer">{t('privacy')}</Link>
               <Link to="/terms" className="hover:text-primary transition-colors cursor-pointer">{t('terms')}</Link>
-              <span className="text-xs opacity-50">v1.0.0</span>
+              <span className="text-xs opacity-50">v1.0.1</span>
             </div>
           </div>
         </footer>
