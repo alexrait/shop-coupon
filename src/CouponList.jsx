@@ -10,10 +10,13 @@ import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import { Badge } from './components/ui/badge';
 import { Separator } from './components/ui/separator';
+import { useLanguage } from './LanguageContext';
 
 export function CouponList() {
     const { privateKey, publicKey, vaultId, vaultName } = useVault();
     const { apiFetch } = useAuth();
+    const { t, rtl } = useLanguage();
+
     const [coupons, setCoupons] = useState([]);
     const [isAdding, setIsAdding] = useState(false);
     const [isInviting, setIsInviting] = useState(false);
@@ -54,7 +57,7 @@ export function CouponList() {
                         return { ...payload, id: row.id, created_at: row.created_at };
                     } catch (err) {
                         console.error("Failed to decrypt coupon:", err);
-                        return { title: "[Decryption Failed]", id: row.id, error: true };
+                        return { title: t('decryptionFailed'), id: row.id, error: true };
                     }
                 }));
                 setCoupons(decrypted);
@@ -142,7 +145,7 @@ export function CouponList() {
     };
 
     const markUsed = async (id) => {
-        if (!confirm("Mark as used?")) return;
+        if (!confirm(t('markUsed'))) return;
         try {
             const res = await apiFetch(`/api/coupons?list_id=${vaultId}&id=${id}`, {
                 method: 'DELETE'
@@ -161,15 +164,15 @@ export function CouponList() {
                         <Icons.Cart size={24} className="text-primary" /> {vaultName}
                     </CardTitle>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Icons.Vault size={12} /> ID: {vaultId}
+                        <Icons.Vault size={12} /> {t('id')}: {vaultId}
                     </p>
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => setIsInviting(!isInviting)}>
-                        <Icons.UserPlus size={16} className="mr-2" /> Share
+                        <Icons.UserPlus size={16} className={rtl ? 'ml-2' : 'mr-2'} /> {t('share')}
                     </Button>
                     <Button size="sm" onClick={() => setIsAdding(!isAdding)}>
-                        <Icons.Add size={16} className="mr-2" /> Add
+                        <Icons.Add size={16} className={rtl ? 'ml-2' : 'mr-2'} /> {t('add')}
                     </Button>
                 </div>
             </CardHeader>
@@ -178,8 +181,8 @@ export function CouponList() {
 
                 {isInviting && (
                     <Card className="mb-6 border-primary/30 bg-primary/5 animate-in slide-in-from-right-4 duration-300">
-                        <CardHeader className="py-4">
-                            <CardTitle className="text-sm">Invite Team Member</CardTitle>
+                        <CardHeader className="py-4 text-start">
+                            <CardTitle className="text-sm">{t('inviteMember')}</CardTitle>
                         </CardHeader>
                         <form onSubmit={handleInvite}>
                             <CardContent className="py-0 pb-4">
@@ -188,16 +191,17 @@ export function CouponList() {
                                     required
                                     value={inviteEmail}
                                     onChange={e => setInviteEmail(e.target.value)}
-                                    placeholder="Enter Gmail address..."
+                                    placeholder={t('enterEmail')}
+                                    className="text-start"
                                 />
                             </CardContent>
                             <CardFooter className="flex gap-2 py-4 pt-0">
                                 <Button size="sm" className="w-full" disabled={inviteLoading}>
-                                    {inviteLoading ? <Loader2 className="animate-spin mr-2" size={14} /> : <Icons.Share size={14} className="mr-2" />}
-                                    Send Access
+                                    {inviteLoading ? <Loader2 className="animate-spin mr-2 ml-2" size={14} /> : <Icons.Share size={14} className={rtl ? 'ml-2' : 'mr-2'} />}
+                                    {t('sendAccess')}
                                 </Button>
                                 <Button size="sm" variant="ghost" type="button" onClick={() => setIsInviting(false)}>
-                                    <Icons.Logout size={14} />
+                                    <Icons.Logout size={14} className={rtl ? 'rotate-180' : ''} />
                                 </Button>
                             </CardFooter>
                         </form>
@@ -206,27 +210,27 @@ export function CouponList() {
 
                 {isAdding && (
                     <Card className="mb-6 border-primary bg-primary/10 shadow-lg animate-in fade-in duration-300">
-                        <CardHeader>
+                        <CardHeader className="text-start">
                             <CardTitle className="text-lg flex items-center gap-2">
-                                <Icons.Coupon size={20} className="text-primary" /> New Secure Coupon
+                                <Icons.Coupon size={20} className="text-primary" /> {t('addCoupon')}
                             </CardTitle>
                         </CardHeader>
                         <form onSubmit={handleSaveCoupon}>
-                            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-start">
                                 <div className="space-y-2">
-                                    <Label>Title</Label>
-                                    <Input required value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Amazon 20% Off" />
+                                    <Label>{t('title')}</Label>
+                                    <Input required value={title} onChange={e => setTitle(e.target.value)} placeholder="..." />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Coupon Code</Label>
-                                    <Input value={code} onChange={e => setCode(e.target.value)} placeholder="e.g. SAVE20B" />
+                                    <Label>{t('code')}</Label>
+                                    <Input value={code} onChange={e => setCode(e.target.value)} placeholder="..." />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Value / Discount</Label>
-                                    <Input value={value} onChange={e => setValue(e.target.value)} placeholder="e.g. $10.00" />
+                                    <Label>{t('value')}</Label>
+                                    <Input value={value} onChange={e => setValue(e.target.value)} placeholder="..." />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Image (Optional)</Label>
+                                    <Label>{t('image')}</Label>
                                     <div className="flex items-center gap-2">
                                         <Input type="file" accept="image/*" onChange={handleImageChange} className="cursor-pointer file:text-primary file:font-bold" />
                                         {imageBase64 && <Icons.Check className="text-green-500" />}
@@ -234,10 +238,10 @@ export function CouponList() {
                                 </div>
                             </CardContent>
                             <CardFooter className="flex gap-2 justify-end">
-                                <Button variant="ghost" type="button" onClick={() => setIsAdding(false)}>Cancel</Button>
+                                <Button variant="ghost" type="button" onClick={() => setIsAdding(false)}>{t('cancel')}</Button>
                                 <Button type="submit" disabled={loading}>
-                                    {loading ? <Loader2 className="animate-spin mr-2" /> : <Icons.Shield size={18} className="mr-2" />}
-                                    Protect & Save
+                                    {loading ? <Loader2 className="animate-spin mr-2 ml-2" /> : <Icons.Shield size={18} className={rtl ? 'ml-2' : 'mr-2'} />}
+                                    {t('protectSave')}
                                 </Button>
                             </CardFooter>
                         </form>
@@ -247,20 +251,20 @@ export function CouponList() {
                 {fetching ? (
                     <div className="flex flex-col items-center justify-center py-20 text-muted-foreground animate-pulse">
                         <Icons.Cart size={48} className="mb-4 opacity-20" />
-                        <p>Decrypting your shopping vault...</p>
+                        <p>{t('decrypting')}</p>
                     </div>
                 ) : coupons.length === 0 ? (
                     <div className="text-center py-20 bg-muted/20 border-2 border-dashed rounded-xl">
                         <Icons.Coupon size={64} className="mx-auto mb-4 opacity-10" />
-                        <p className="text-muted-foreground">This vault is currently empty.</p>
-                        <Button variant="link" onClick={() => setIsAdding(true)}>Add your first coupon</Button>
+                        <p className="text-muted-foreground">{t('appName')} - {t('noVaults')}</p>
+                        <Button variant="link" onClick={() => setIsAdding(true)}>{t('addCoupon')}</Button>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-4">
                         {coupons.map((c) => (
                             <Card key={c.id} className="group overflow-hidden hover:border-primary/50 transition-all hover:bg-muted/30">
-                                <div className="flex items-center">
-                                    <div className="flex-1 p-6">
+                                <div className={`flex items-center ${rtl ? 'flex-row-reverse' : ''}`}>
+                                    <div className="flex-1 p-6 text-start">
                                         <div className="flex items-center gap-2 mb-1">
                                             <h4 className={`font-bold text-lg ${c.error ? 'text-destructive' : ''}`}>{c.title}</h4>
                                             {c.value && <Badge variant="secondary" className="font-mono">{c.value}</Badge>}
@@ -276,21 +280,21 @@ export function CouponList() {
                                             </div>
                                         )}
                                         <p className="text-[10px] text-muted-foreground mt-4 flex items-center gap-1 uppercase tracking-widest font-semibold">
-                                            <Icons.History size={10} /> Added {new Date(c.created_at).toLocaleDateString()}
+                                            <Icons.History size={10} /> {new Date(c.created_at).toLocaleDateString()}
                                         </p>
                                     </div>
 
                                     {c.imageBase64 ? (
-                                        <div className="w-32 h-32 bg-white flex items-center justify-center border-l shrink-0">
+                                        <div className={`w-32 h-32 bg-white flex items-center justify-center ${rtl ? 'border-r' : 'border-l'} shrink-0`}>
                                             <img src={c.imageBase64} alt="" className="max-w-[80%] max-h-[80%] object-contain" />
                                         </div>
                                     ) : (
-                                        <div className="w-32 h-32 bg-secondary/30 flex items-center justify-center border-l shrink-0">
+                                        <div className={`w-32 h-32 bg-secondary/30 flex items-center justify-center ${rtl ? 'border-r' : 'border-l'} shrink-0`}>
                                             <Icons.Image size={32} className="opacity-10" />
                                         </div>
                                     )}
 
-                                    <div className="p-4 bg-muted/50 group-hover:bg-primary/10 transition-colors border-l shrink-0 self-stretch flex flex-col justify-center">
+                                    <div className={`p-4 bg-muted/50 group-hover:bg-primary/10 transition-colors ${rtl ? 'border-r' : 'border-l'} shrink-0 self-stretch flex flex-col justify-center`}>
                                         <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary" onClick={() => markUsed(c.id)}>
                                             <Icons.History size={20} />
                                         </Button>

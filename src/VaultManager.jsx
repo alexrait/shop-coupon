@@ -8,10 +8,12 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './componen
 import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import { Loader2 } from 'lucide-react';
+import { useLanguage } from './LanguageContext';
 
 export function VaultManager({ user }) {
     const { apiFetch } = useAuth();
     const { setKeys } = useVault();
+    const { t, rtl } = useLanguage();
 
     const [vaults, setVaults] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -120,12 +122,12 @@ export function VaultManager({ user }) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-semibold flex items-center gap-2">
-                    <Icons.Key className="text-primary" /> Your Vaults
+                    <Icons.Key className="text-primary" /> {t('vaults')}
                 </h3>
                 <Button
                     onClick={() => { setIsCreating(!isCreating); setUnlockingVault(null); setPassword(''); }}
                 >
-                    <Icons.Add size={18} className="mr-2" /> New Vault
+                    <Icons.Add size={18} className={rtl ? 'ml-2' : 'mr-2'} /> {t('newVault')}
                 </Button>
             </div>
 
@@ -133,40 +135,40 @@ export function VaultManager({ user }) {
                 <Card className="border-primary/50 bg-primary/5 animate-in slide-in-from-top-4 duration-300">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
-                            <Icons.Vault size={20} className="text-primary" /> Create Encrypted Vault
+                            <Icons.Vault size={20} className="text-primary" /> {t('createVault')}
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground">This password secures your private key. Do not lose it.</p>
+                        <p className="text-sm text-muted-foreground">{t('encryptionPassword')}</p>
                     </CardHeader>
                     <form onSubmit={handleCreateVault}>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="vaultName">Vault Name</Label>
+                                <Label htmlFor="vaultName">{t('vaultName')}</Label>
                                 <Input
                                     id="vaultName"
                                     required
                                     value={vaultName}
                                     onChange={(e) => setVaultName(e.target.value)}
-                                    placeholder="e.g. Shopping Vouchers"
+                                    placeholder={t('vaultName')}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="password">Encryption Password</Label>
+                                <Label htmlFor="password">{t('encryptionPassword')}</Label>
                                 <Input
                                     id="password"
                                     type="password"
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="Must be strong..."
+                                    placeholder={t('encryptionPassword')}
                                 />
                             </div>
                         </CardContent>
                         <CardFooter className="flex gap-2">
                             <Button type="submit" disabled={actionLoading || !password || !vaultName}>
-                                {actionLoading ? <Loader2 className="animate-spin mr-2" /> : <Icons.Shield size={18} className="mr-2" />}
-                                Generate Keys & Save Vault
+                                {actionLoading ? <Loader2 className="animate-spin mr-2 ml-2" /> : <Icons.Shield size={18} className={rtl ? 'ml-2' : 'mr-2'} />}
+                                {t('generateKeys')}
                             </Button>
-                            <Button type="button" variant="ghost" onClick={() => setIsCreating(false)}>Cancel</Button>
+                            <Button type="button" variant="ghost" onClick={() => setIsCreating(false)}>{t('cancel')}</Button>
                         </CardFooter>
                     </form>
                 </Card>
@@ -176,9 +178,9 @@ export function VaultManager({ user }) {
                 <Card className="border-primary bg-primary/10 shadow-lg animate-in zoom-in-95 duration-300">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
-                            <Icons.LockOpen size={20} className="text-primary" /> Unlock "{unlockingVault.name}"
+                            <Icons.LockOpen size={20} className="text-primary" /> {t('unlock')} "{unlockingVault.name}"
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground">Enter the exact vault password to decrypt and load your records.</p>
+                        <p className="text-sm text-muted-foreground">{t('enterPassword')}</p>
                     </CardHeader>
                     <form onSubmit={handleUnlockVault}>
                         <CardContent>
@@ -188,15 +190,15 @@ export function VaultManager({ user }) {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Vault Password..."
+                                placeholder={t('password')}
                             />
                         </CardContent>
                         <CardFooter className="flex gap-2">
                             <Button type="submit" disabled={actionLoading || !password} className="w-full">
-                                {actionLoading ? <Loader2 className="animate-spin mr-2" /> : <Icons.Check size={18} className="mr-2" />}
-                                Unlock Vault
+                                {actionLoading ? <Loader2 className="animate-spin mr-2 ml-2" /> : <Icons.Check size={18} className={rtl ? 'ml-2' : 'mr-2'} />}
+                                {t('unlock')}
                             </Button>
-                            <Button type="button" variant="ghost" onClick={() => { setUnlockingVault(null); setPassword(''); }}>Cancel</Button>
+                            <Button type="button" variant="ghost" onClick={() => { setUnlockingVault(null); setPassword(''); }}>{t('cancel')}</Button>
                         </CardFooter>
                     </form>
                 </Card>
@@ -210,7 +212,7 @@ export function VaultManager({ user }) {
                 <Card className="bg-muted/30 border-dashed">
                     <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                         <Icons.Folder size={48} className="mb-4 opacity-20" />
-                        <p>No vaults found. Create one to get started.</p>
+                        <p>{t('noVaults')}</p>
                     </CardContent>
                 </Card>
             ) : (
@@ -218,7 +220,7 @@ export function VaultManager({ user }) {
                     {vaults.map((vault) => (
                         <Card
                             key={vault.id}
-                            className="group cursor-pointer hover:border-primary transition-all hover:bg-primary/5 active:scale-95"
+                            className="group cursor-pointer hover:border-primary transition-all hover:bg-primary/5 active:scale-95 text-center"
                             onClick={() => { setUnlockingVault(vault); setIsCreating(false); setPassword(''); }}
                         >
                             <CardContent className="flex flex-col items-center justify-center p-8">
