@@ -121,26 +121,27 @@ const Dashboard = ({ user }) => {
 };
 
 function AppContent() {
-  const { user, login, logout, isInitialized } = useAuth();
-  const { t, lang, toggleLanguage } = useLanguage();
-  const [showPrivacy, setShowPrivacy] = useState(false);
-  const [showTerms, setShowTerms] = useState(false);
+    const { user, login, logout, isInitialized } = useAuth();
+    const { t, lang, toggleLanguage } = useLanguage();
+    const { closeVault } = useVault();
+    const [showPrivacy, setShowPrivacy] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
 
-  if (!isInitialized) return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <Icons.Cart size={48} className="animate-bounce text-primary" />
-    </div>
-  );
+    if (!isInitialized) return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Icons.Cart size={48} className="animate-bounce text-primary" />
+      </div>
+    );
 
-  return (
-    <Router>
-      <div className="min-h-screen bg-background font-sans selection:bg-primary/30">
-        <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-          <div className="container flex h-16 items-center justify-between px-4">
-            <Link to="/" className="flex items-center gap-2 group transition-all">
-              <Icons.Vault size={32} className="text-primary group-hover:scale-110 transition-transform" />
-              <span className="text-xl font-bold tracking-tight">{t('appName')}</span>
-            </Link>
+    return (
+      <Router>
+        <div className="min-h-screen bg-background font-sans selection:bg-primary/30">
+          <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+            <div className="container flex h-16 items-center justify-between px-4">
+              <Link to="/" onClick={closeVault} className="flex items-center gap-2 group transition-all cursor-pointer">
+                <Icons.Vault size={32} className="text-primary group-hover:scale-110 transition-transform" />
+                <span className="text-xl font-bold tracking-tight">{t('appName')}</span>
+              </Link>
             <nav className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={toggleLanguage} className="font-bold">
                 {lang === 'en' ? 'HE' : 'EN'}

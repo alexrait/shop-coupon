@@ -417,15 +417,15 @@ export function CouponList() {
         <>
             <Card className="shadow-xl bg-card border-border">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <div className="flex items-center gap-4 space-y-1">
+                    <div className="flex items-center gap-4">
                         <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 text-muted-foreground hover:text-primary transition-colors shrink-0" 
+                            className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all shrink-0 border border-transparent hover:border-primary/20" 
                             onClick={closeVault}
                             title={t('back')}
                         >
-                            <Icons.Logout size={20} className={rtl ? '' : 'rotate-180'} />
+                            {rtl ? <Icons.ChevronRight size={24} /> : <Icons.ChevronLeft size={24} />}
                         </Button>
                         <div className="space-y-1">
                             <div className="flex items-center gap-2">

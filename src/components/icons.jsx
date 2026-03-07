@@ -165,4 +165,14 @@ export const Icons = {
             <circle cx="15" cy="19" r="1" />
         </Icon>
     ),
+    ChevronLeft: (props) => (
+        <Icon {...props}>
+            <polyline points="15 18 9 12 15 6" />
+        </Icon>
+    ),
+    ChevronRight: (props) => (
+        <Icon {...props}>
+            <polyline points="9 18 15 12 9 6" />
+        </Icon>
+    ),
 };
