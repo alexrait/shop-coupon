@@ -26,5 +26,18 @@ export function useAuth() {
     const login = () => netlifyIdentity.open('login');
     const logout = () => netlifyIdentity.logout();
 
-    return { user, login, logout, isInitialized: true };
+    const apiFetch = async (endpoint, options = {}) => {
+        if (!user) throw new Error('Not logged in');
+        const token = await user.jwt();
+        return fetch(endpoint, {
+            ...options,
+            headers: {
+                ...options.headers,
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+    };
+
+    return { user, login, logout, apiFetch, isInitialized: true };
 }

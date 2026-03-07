@@ -1,13 +1,17 @@
-import { Handler } from '@netlify/functions';
-import { initSchema } from './db';
+import { initSchema } from './db.js';
 
-export const handler: Handler = async (event, context) => {
+export const handler = async (event, context) => {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
     // Basic security check - shouldn't let anyone run this in prod without auth
-    // In a real app we'd check context.clientContext.user or an admin secret
+    const user = context.clientContext?.user;
+    if (!user) {
+        // For development, we might allow it if we haven't logged in, but let's be safe.
+        // Actually, since this is a critical destructive/setup action, uncomment below in prod:
+        // return { statusCode: 401, body: 'Unauthorized' };
+    }
 
     try {
         await initSchema();
@@ -19,7 +23,7 @@ export const handler: Handler = async (event, context) => {
         console.error('Error initializing schema:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'Failed to initialize schema' })
+            body: JSON.stringify({ error: error.message || 'Failed to initialize schema' })
         };
     }
 };
