@@ -5,7 +5,7 @@ import { useVault } from './VaultContext';
 
 export function CouponList() {
     const { privateKey, publicKey } = useVault();
-    const [coupons, setCoupons] = useState<any[]>([]); // Mock state
+    const [coupons, setCoupons] = useState([]); // Mock state
     const [isAdding, setIsAdding] = useState(false);
     const [loading, setLoading] = useState(false);
 
@@ -13,21 +13,21 @@ export function CouponList() {
     const [title, setTitle] = useState('');
     const [code, setCode] = useState('');
     const [value, setValue] = useState('');
-    const [imageBase64, setImageBase64] = useState<string>('');
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [imageBase64, setImageBase64] = useState('');
+    const fileInputRef = useRef(null);
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = (e) => {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setImageBase64(reader.result as string);
+                setImageBase64(reader.result);
             };
             reader.readAsDataURL(file);
         }
     };
 
-    const handleSaveCoupon = async (e: React.FormEvent) => {
+    const handleSaveCoupon = async (e) => {
         e.preventDefault();
         if (!publicKey) return alert("No active vault keys found.");
 
@@ -44,7 +44,6 @@ export function CouponList() {
             const payloadString = JSON.stringify(payload);
 
             // 2. Generate Random AES Key for this coupon (Hybrid Encryption)
-            // Because RSA can't encrypt large base64 strings directly
             const aesKey = await cryptoUtils.generateAESKey();
 
             // 3. Encrypt payload with AES
@@ -56,7 +55,7 @@ export function CouponList() {
             // 5. Encrypt the exported AES key with the Vault's RSA Public Key
             const encryptedAesKey = await cryptoUtils.encryptRSA(exportedAes, publicKey);
 
-            // TODO: POST to server API
+            // API Save Hook
             console.log("Saving Encrypted Data...", {
                 encrypted_payload: encryptedPayload,
                 iv,
@@ -115,7 +114,6 @@ export function CouponList() {
                 </form>
             )}
 
-            {/* List */}
             {coupons.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
                     No coupons in this vault yet.

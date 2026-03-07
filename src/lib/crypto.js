@@ -1,5 +1,5 @@
 /**
- * VaultCart Cryptography Module
+ * VaultCart Cryptography Module (Vanilla JS)
  * Uses standard Web Crypto API for all operations
  */
 
@@ -39,7 +39,7 @@ export const cryptoUtils = {
     /**
      * Derives an AES-GCM Key from a user password using PBKDF2
      */
-    async deriveKeyFromPassword(password: string, saltArray: Uint8Array) {
+    async deriveKeyFromPassword(password, saltArray) {
         const enc = new TextEncoder();
         const keyMaterial = await window.crypto.subtle.importKey(
             "raw",
@@ -65,22 +65,22 @@ export const cryptoUtils = {
 
     // --- 2. Key Export/Import Base64 ---
 
-    async exportPrivateKey(key: CryptoKey): Promise<string> {
+    async exportPrivateKey(key) {
         const exported = await window.crypto.subtle.exportKey("pkcs8", key);
         return this.arrayBufferToBase64(exported);
     },
 
-    async exportPublicKey(key: CryptoKey): Promise<string> {
+    async exportPublicKey(key) {
         const exported = await window.crypto.subtle.exportKey("spki", key);
         return this.arrayBufferToBase64(exported);
     },
 
-    async exportAESKey(key: CryptoKey): Promise<string> {
+    async exportAESKey(key) {
         const exported = await window.crypto.subtle.exportKey("raw", key);
         return this.arrayBufferToBase64(exported);
     },
 
-    async importPrivateKey(base64: string): Promise<CryptoKey> {
+    async importPrivateKey(base64) {
         const binary = this.base64ToArrayBuffer(base64);
         return window.crypto.subtle.importKey(
             "pkcs8",
@@ -94,7 +94,7 @@ export const cryptoUtils = {
         );
     },
 
-    async importPublicKey(base64: string): Promise<CryptoKey> {
+    async importPublicKey(base64) {
         const binary = this.base64ToArrayBuffer(base64);
         return window.crypto.subtle.importKey(
             "spki",
@@ -108,7 +108,7 @@ export const cryptoUtils = {
         );
     },
 
-    async importAESKey(base64: string): Promise<CryptoKey> {
+    async importAESKey(base64) {
         const binary = this.base64ToArrayBuffer(base64);
         return window.crypto.subtle.importKey(
             "raw",
@@ -124,7 +124,7 @@ export const cryptoUtils = {
     /**
      * Encrypt data with an AES-GCM Key
      */
-    async encryptAES(data: string, key: CryptoKey): Promise<{ cipher: string, iv: string }> {
+    async encryptAES(data, key) {
         const enc = new TextEncoder();
         const encoded = enc.encode(data);
         const iv = window.crypto.getRandomValues(new Uint8Array(12));
@@ -147,7 +147,7 @@ export const cryptoUtils = {
     /**
      * Decrypt data with an AES-GCM Key
      */
-    async decryptAES(cipherBase64: string, ivBase64: string, key: CryptoKey): Promise<string> {
+    async decryptAES(cipherBase64, ivBase64, key) {
         const dec = new TextDecoder();
         const ciphertext = this.base64ToArrayBuffer(cipherBase64);
         const iv = this.base64ToArrayBuffer(ivBase64);
@@ -167,7 +167,7 @@ export const cryptoUtils = {
     /**
      * Encrypt small data (like an exported AES key) with an RSA Public Key
      */
-    async encryptRSA(dataBase64: string, publicKey: CryptoKey): Promise<string> {
+    async encryptRSA(dataBase64, publicKey) {
         const data = this.base64ToArrayBuffer(dataBase64);
         const ciphertext = await window.crypto.subtle.encrypt(
             {
@@ -182,7 +182,7 @@ export const cryptoUtils = {
     /**
      * Decrypt small data with an RSA Private Key
      */
-    async decryptRSA(cipherBase64: string, privateKey: CryptoKey): Promise<string> {
+    async decryptRSA(cipherBase64, privateKey) {
         const ciphertext = this.base64ToArrayBuffer(cipherBase64);
         const decrypted = await window.crypto.subtle.decrypt(
             {
@@ -196,12 +196,12 @@ export const cryptoUtils = {
 
     // --- Utility ---
 
-    generateSalt(): string {
+    generateSalt() {
         const salt = window.crypto.getRandomValues(new Uint8Array(16));
         return this.arrayBufferToBase64(salt);
     },
 
-    arrayBufferToBase64(buffer: ArrayBuffer | Uint8Array): string {
+    arrayBufferToBase64(buffer) {
         let binary = '';
         const bytes = new Uint8Array(buffer);
         const len = bytes.byteLength;
@@ -211,7 +211,7 @@ export const cryptoUtils = {
         return window.btoa(binary);
     },
 
-    base64ToArrayBuffer(base64: string): ArrayBuffer {
+    base64ToArrayBuffer(base64) {
         const binary_string = window.atob(base64);
         const len = binary_string.length;
         const bytes = new Uint8Array(len);

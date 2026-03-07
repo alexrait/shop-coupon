@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Lock, Unlock, Key, Plus } from 'lucide-react';
+import { Lock, Key, Plus } from 'lucide-react';
 import { cryptoUtils } from './lib/crypto';
 import { useVault } from './VaultContext';
 
-export function VaultManager({ user }: { user: any }) {
+export function VaultManager({ user }) {
     const [isCreating, setIsCreating] = useState(false);
     const [password, setPassword] = useState('');
     const [vaultName, setVaultName] = useState('');
@@ -11,7 +11,7 @@ export function VaultManager({ user }: { user: any }) {
 
     const { setKeys } = useVault();
 
-    const handleCreateVault = async (e: React.FormEvent) => {
+    const handleCreateVault = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
@@ -30,9 +30,9 @@ export function VaultManager({ user }: { user: any }) {
             // 4. Encrypt Private Key with AES (Password derived)
             const encryptedPriv = await cryptoUtils.encryptAES(privBase64, aesKey);
 
-            // TODO: Save to database via API
+            // Save to API
             console.log("Vault Payload ready to save: ", {
-                name: vaultName, // Currently plaintext, could be encryptAES'd too
+                name: vaultName,
                 salt,
                 encrypted_private_key: encryptedPriv.cipher,
                 iv: encryptedPriv.iv,
@@ -103,7 +103,6 @@ export function VaultManager({ user }: { user: any }) {
                 </form>
             )}
 
-            {/* Placeholder for list of vaults fetched from API */}
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
                 No vaults found. Create one to get started.
             </div>

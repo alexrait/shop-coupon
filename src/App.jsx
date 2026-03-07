@@ -6,7 +6,7 @@ import { VaultManager } from './VaultManager';
 import { CouponList } from './CouponList';
 import { CouponHistory } from './CouponHistory';
 
-const Home = ({ login }: { login: () => void }) => (
+const Home = ({ login }) => (
   <div className="card text-center animate-fade-in" style={{ maxWidth: '500px', margin: '4rem auto' }}>
     <Lock size={48} color="var(--color-primary)" style={{ marginBottom: '1rem' }} />
     <h2>Welcome to VaultCart</h2>
@@ -15,7 +15,7 @@ const Home = ({ login }: { login: () => void }) => (
   </div>
 );
 
-const Dashboard = ({ user }: { user: any }) => {
+const Dashboard = ({ user }) => {
   const { publicKey } = useVault();
 
   return (

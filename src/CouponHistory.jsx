@@ -1,22 +1,13 @@
 import { useState } from 'react';
 import { History, RotateCcw } from 'lucide-react';
 
-// Mock Interfaces
-interface ActionLog {
-    id: string;
-    action_type: 'CREATED' | 'USED' | 'EDITED' | 'DELETED';
-    coupon_title_preview: string; // The plaintext short title stored alongside the encrypted payload
-    created_at: string;
-}
-
 export function CouponHistory() {
-    const [logs] = useState<ActionLog[]>([
+    const [logs] = useState([
         { id: '1', action_type: 'USED', coupon_title_preview: '15% Off BestBuy', created_at: new Date(Date.now() - 1000 * 60 * 60).toISOString() },
         { id: '2', action_type: 'CREATED', coupon_title_preview: 'Amazon $10', created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
     ]);
 
-    const handleUndo = (logId: string) => {
-        // API Call to undo action (e.g. un-delete or un-mark as used)
+    const handleUndo = (logId) => {
         alert(`Undoing action for log ${logId}`);
     };
 
