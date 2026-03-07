@@ -1,5 +1,5 @@
 /**
- * VaultCart Cryptography Module (Vanilla JS)
+ * Vault Cart Cryptography Module (Vanilla JS)
  * Uses standard Web Crypto API for all operations
  */
 

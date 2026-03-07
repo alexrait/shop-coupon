@@ -9,7 +9,7 @@ import { CouponHistory } from './CouponHistory';
 const Home = ({ login }) => (
   <div className="card text-center animate-fade-in" style={{ maxWidth: '500px', margin: '4rem auto' }}>
     <Lock size={48} color="var(--color-primary)" style={{ marginBottom: '1rem' }} />
-    <h2>Welcome to VaultCart</h2>
+    <h2>Welcome to Vault Cart</h2>
     <p>End-to-End Encrypted Coupon Management.</p>
     <button className="btn btn-primary mt-4" onClick={login}>Login to Continue</button>
   </div>
@@ -47,7 +47,7 @@ function App() {
           <header className="app-header">
             <Link to="/" className="app-logo">
               <Lock size={28} color="var(--color-primary)" />
-              VaultCart
+              Vault Cart
             </Link>
             <nav>
               {user ? (
