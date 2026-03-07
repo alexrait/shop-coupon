@@ -166,11 +166,9 @@ export function CouponList() {
     const handleMagicFormat = () => {
         // Remove all non-alphanumeric chars
         const clean = code.replace(/[^A-Z0-9]/gi, '');
-        if (clean.length === 16) {
-            const formatted = clean.match(/.{1,4}/g).join('-');
-            setCode(formatted);
-        } else {
-            alert("Formatting only works for 16-digit codes.");
+        if (clean.length > 0) {
+            const chunks = clean.match(/.{1,4}/g);
+            setCode(chunks.join('-'));
         }
     };
 
@@ -322,7 +320,7 @@ export function CouponList() {
                                 <Button variant="ghost" type="button" onClick={() => { setIsAdding(false); setEditingCoupon(null); }}>{t('cancel')}</Button>
                                 <Button type="submit" disabled={loading}>
                                     {loading ? <Loader2 className="animate-spin mr-2 ml-2" /> : <Icons.Shield size={18} className={rtl ? 'ml-2' : 'mr-2'} />}
-                                    {editingCoupon ? t('saving') : t('protectSave')}
+                                    {loading ? t('saving') : (editingCoupon ? t('save') : t('protectSave'))}
                                 </Button>
                             </CardFooter>
                         </form>

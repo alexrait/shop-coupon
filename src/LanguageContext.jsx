@@ -61,6 +61,7 @@ const translations = {
         feature2: "Organize coupons in secure, password-protected vaults",
         feature3: "Share vault access with trusted team members",
         feature4: "Full activity history so nothing gets lost",
+        save: "Save",
     },
     he: {
         appName: "ארגז הקופונים",
@@ -122,6 +123,7 @@ const translations = {
         feature2: "ארגן קופונים בכספות מאובטחות עם סיסמה",
         feature3: "שתף גישה לכספת עם חברי צוות מהימנים",
         feature4: "היסטוריית פעילות מלאה כדי שלא תפספס דבר",
+        save: "שמירה",
     }
 };
 
