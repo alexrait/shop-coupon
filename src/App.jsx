@@ -152,7 +152,7 @@ function AppContent() {
         <div className="min-h-screen bg-background font-sans selection:bg-primary/30">
           <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-16 items-center justify-between px-4">
-              <Link to="/" onClick={closeVault} className="flex items-center gap-2 group transition-all cursor-pointer">
+              <Link to="/dashboard" onClick={closeVault} className="flex items-center gap-2 group transition-all cursor-pointer">
                 <Icons.Vault size={32} className="text-primary group-hover:scale-110 transition-transform" />
                 <span className="text-xl font-bold tracking-tight">{t('appName')}</span>
               </Link>
