@@ -99,7 +99,6 @@ function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete, actionLo
                         type="button"
                         className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-green-600 touch-manipulation rounded-md"
                         onClick={(e) => { e.stopPropagation(); onStatusChange(item.id, 'bought'); }} 
-                        onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); onStatusChange(item.id, 'bought'); }}
                         title={t('markBought')}
                         disabled={isLoading}
                     >
@@ -110,7 +109,6 @@ function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete, actionLo
                         type="button"
                         className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-primary touch-manipulation rounded-md"
                         onClick={(e) => { e.stopPropagation(); onStatusChange(item.id, 'pending'); }} 
-                        onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); onStatusChange(item.id, 'pending'); }}
                         title={t('markPending')}
                         disabled={isLoading}
                     >
@@ -121,7 +119,6 @@ function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete, actionLo
                     type="button"
                     className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive touch-manipulation rounded-md"
                     onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} 
-                    onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); onDelete(item.id); }}
                     title={t('delete')}
                     disabled={isLoading}
                 >
@@ -342,7 +339,10 @@ export function ShoppingCartView() {
             });
             console.log('Status change response:', res.status, res.ok);
             if (res.ok) {
-                await fetchItems();
+                // Optimistically update local state immediately — avoids full re-fetch
+                // which triggers setFetching(true) and remounts the DnD list.
+                const updated = await res.json();
+                setItems(prev => prev.map(item => item.id === id ? { ...item, ...updated } : item));
             } else {
                 const err = await res.json();
                 console.error('Failed to update status:', err);
