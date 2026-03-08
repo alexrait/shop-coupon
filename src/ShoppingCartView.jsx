@@ -35,7 +35,7 @@ import {
   DialogFooter,
 } from "./components/ui/dialog";
 
-function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete }) {
+function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete, actionLoading }) {
     const {
         attributes,
         listeners,
@@ -53,6 +53,7 @@ function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete }) {
     };
 
     const isBought = item.status === 'bought';
+    const isLoading = actionLoading === item.id;
 
     return (
         <div 
@@ -100,8 +101,9 @@ function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete }) {
                         className="h-8 w-8 text-muted-foreground hover:text-green-600" 
                         onClick={(e) => { e.stopPropagation(); onStatusChange(item.id, 'bought'); }} 
                         title={t('markBought')}
+                        disabled={isLoading}
                     >
-                        <Icons.Check size={16} />
+                        {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Icons.Check size={16} />}
                     </Button>
                 ) : (
                     <Button 
@@ -110,8 +112,9 @@ function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete }) {
                         className="h-8 w-8 text-muted-foreground hover:text-primary" 
                         onClick={(e) => { e.stopPropagation(); onStatusChange(item.id, 'pending'); }} 
                         title={t('markPending')}
+                        disabled={isLoading}
                     >
-                        <Icons.ChevronRight size={16} />
+                        {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Icons.ChevronRight size={16} />}
                     </Button>
                 )}
                 <Button 
@@ -120,8 +123,9 @@ function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete }) {
                     className="h-8 w-8 text-muted-foreground hover:text-destructive" 
                     onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} 
                     title={t('delete')}
+                    disabled={isLoading}
                 >
-                    <Icons.Trash size={16} />
+                    {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Icons.Trash size={16} />}
                 </Button>
             </div>
         </div>
@@ -141,6 +145,7 @@ export function ShoppingCartView() {
     const [editingItem, setEditingItem] = useState(null);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
+    const [actionLoading, setActionLoading] = useState(null);
 
     const [itemName, setItemName] = useState('');
     const [quantity, setQuantity] = useState(1);
@@ -321,6 +326,7 @@ export function ShoppingCartView() {
     };
 
     const handleStatusChange = async (id, status) => {
+        setActionLoading(id);
         try {
             const res = await apiFetch(`/api/shopping-items?list_id=${listId}&id=${id}`, {
                 method: 'PATCH',
@@ -335,11 +341,14 @@ export function ShoppingCartView() {
             }
         } catch (err) {
             console.error(err);
+        } finally {
+            setActionLoading(null);
         }
     };
 
     const handleDelete = async (id) => {
         if (!confirm(t('confirmDeleteItem'))) return;
+        setActionLoading(id);
         try {
             const res = await apiFetch(`/api/shopping-items?list_id=${listId}&id=${id}`, {
                 method: 'DELETE'
@@ -353,6 +362,8 @@ export function ShoppingCartView() {
             }
         } catch (err) {
             console.error(err);
+        } finally {
+            setActionLoading(null);
         }
     };
 
@@ -515,6 +526,7 @@ export function ShoppingCartView() {
                                             onStatusChange={handleStatusChange}
                                             onEdit={startEdit}
                                             onDelete={handleDelete}
+                                            actionLoading={actionLoading}
                                         />
                                     ))}
                                 </SortableContext>

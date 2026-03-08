@@ -106,7 +106,9 @@ export const handler = async (event, context) => {
             if (note !== undefined) updates.note = note;
             if (encrypted_name !== undefined) updates.encrypted_name = encrypted_name;
 
-            if (Object.keys(updates).length === 0) return { statusCode: 400, body: 'nothing to update' };
+            if (Object.keys(updates).length === 0) {
+                return { statusCode: 400, body: JSON.stringify({ error: 'Invalid status. Must be "bought" or "pending".' }) };
+            }
 
             const setClauses = [];
             const values = [];
@@ -129,7 +131,9 @@ export const handler = async (event, context) => {
 
             const [updated] = await sql.query(query, values);
 
-            if (updated) {
+            if (!updated) {
+                return { statusCode: 404, body: JSON.stringify({ error: 'Item not found or access denied.' }) };
+            }
                 // Notify members
                 await notifyMembers(sql, listId, userId, 'updateItem', {
                     title: `${listName}: Item Updated`,
@@ -143,24 +147,26 @@ export const handler = async (event, context) => {
 
         if (method === 'DELETE') {
             const itemId = event.queryStringParameters?.id;
-            if (!itemId) return { statusCode: 400, body: 'item id required' };
+            if (!itemId) return { statusCode: 400, body: JSON.stringify({ error: 'Item ID is required.' }) };
 
             // Get item name before delete
             const [item] = await sql`SELECT encrypted_name FROM shopcoupon.shopping_items WHERE id = ${itemId} AND list_id = ${listId}`;
+
+            if (!item) {
+                return { statusCode: 404, body: JSON.stringify({ error: 'Item not found or access denied.' }) };
+            }
 
             await sql`
                 DELETE FROM shopcoupon.shopping_items 
                 WHERE id = ${itemId} AND list_id = ${listId}
             `;
 
-            if (item) {
-                // Notify members
-                await notifyMembers(sql, listId, userId, 'removeItem', {
-                    title: `${listName}: Item Removed`,
-                    body: `Item removed: ${item.encrypted_name}`,
-                    url: `/shopping-list/${listId}`
-                });
-            }
+            // Notify members
+            await notifyMembers(sql, listId, userId, 'removeItem', {
+                title: `${listName}: Item Removed`,
+                body: `Item removed: ${item.encrypted_name}`,
+                url: `/shopping-list/${listId}`
+            });
 
             return { statusCode: 204, body: '' };
         }
