@@ -108,7 +108,7 @@ const Dashboard = ({ user }) => {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 animate-in fade-in duration-700">
+    <div className="container mx-auto max-w-4xl py-8 px-4 animate-in fade-in duration-700">
       <div className="mb-8">
         <h2 className="text-3xl font-bold mb-1">{t('welcomeBack', { name: user?.user_metadata?.full_name || user?.email?.split('@')[0] })}</h2>
         <p className="text-muted-foreground">{t('tagline')}</p>
@@ -233,7 +233,7 @@ function AppContent() {
             <div className="flex gap-4 text-sm font-medium text-muted-foreground">
               <Link to="/privacy" className="hover:text-primary transition-colors cursor-pointer">{t('privacy')}</Link>
               <Link to="/terms" className="hover:text-primary transition-colors cursor-pointer">{t('terms')}</Link>
-              <span className="text-xs opacity-50">v1.0.9</span>
+              <span className="text-xs opacity-50">v1.0.10</span>
             </div>
           </div>
         </footer>
