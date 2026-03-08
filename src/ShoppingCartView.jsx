@@ -357,6 +357,8 @@ export function ShoppingCartView() {
     };
 
     const handleDelete = async (id) => {
+        const itemToDelete = items.find(i => i.id === id);
+        console.log("-- DELETE ITEM DIAGNOSTIC --", JSON.stringify(itemToDelete, null, 2));
         if (!confirm(t('confirmDeleteItem'))) return;
         setActionLoading(id);
         try {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'coupon-chest-v1.0.13';
+const CACHE_NAME = 'coupon-chest-v1.0.16';
 const urlsToCache = [
     '/',
     '/index.html',

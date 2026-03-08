@@ -61,6 +61,10 @@ export default function ShoppingItemEditPage() {
         setSaving(true);
         try {
             if (isNew) {
+                console.log("-- ADD ITEM DIAGNOSTIC (POST) --", JSON.stringify({
+                    encrypted_name: itemName.trim(),
+                    quantity: parseInt(quantity) || 1
+                }, null, 2));
                 const res = await apiFetch(`/api/shopping-items?list_id=${listId}`, {
                     method: 'POST',
                     body: JSON.stringify({
@@ -103,9 +107,11 @@ export default function ShoppingItemEditPage() {
             const res = await apiFetch(`/api/shopping-items?list_id=${listId}&id=${itemId}`, {
                 method: 'DELETE'
             });
-            if (res.ok) {
-                navigate(-1);
-            }
+                if (res.ok) {
+                    const newItem = await res.json();
+                    console.log("-- ADD ITEM DIAGNOSTIC (RESULT) --", JSON.stringify(newItem, null, 2));
+                    navigate(-1);
+                }
         } catch (err) {
             console.error(err);
         }
