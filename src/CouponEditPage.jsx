@@ -334,37 +334,36 @@ export function CouponEditPage() {
                         </div>
                     )}
 
-                    <div className="flex gap-2 pt-4">
-                        {!isNew && (
-                            <>
-                                <Button 
-                                    type="button"
-                                    variant={status === 'used' ? 'default' : 'outline'}
-                                    size="sm"
-                                    onClick={handleMarkUsed}
-                                    disabled={saving}
-                                    className={status === 'used' ? 'bg-green-600 hover:bg-green-700' : ''}
-                                >
-                                    <Icons.Check size={16} className={rtl ? 'ml-2' : 'mr-2'} />
-                                    {status === 'used' ? t('undo') : t('markUsed')}
-                                </Button>
-                                <Button 
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleDelete}
-                                    className="text-destructive hover:text-destructive"
-                                >
-                                    <Icons.Trash size={16} className={rtl ? 'ml-2' : 'mr-2'} />
-                                    {t('delete')}
-                                </Button>
-                            </>
-                        )}
-                        <div className="flex-1" />
+                    {!isNew && (
+                        <div className="flex gap-2 pt-4">
+                            <Button 
+                                type="button"
+                                variant={status === 'used' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={handleMarkUsed}
+                                disabled={saving}
+                                className={status === 'used' ? 'bg-green-600 hover:bg-green-700' : ''}
+                            >
+                                <Icons.Check size={16} className={rtl ? 'ml-2' : 'mr-2'} />
+                                {status === 'used' ? t('undo') : t('markUsed')}
+                            </Button>
+                            <Button 
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleDelete}
+                                className="text-destructive hover:text-destructive"
+                            >
+                                <Icons.Trash size={16} className={rtl ? 'ml-2' : 'mr-2'} />
+                                {t('delete')}
+                            </Button>
+                        </div>
+                    )}
+                    <div className="flex justify-end gap-2 pt-2">
                         <Button type="button" variant="ghost" onClick={() => navigate(-1)}>
                             {t('cancel')}
                         </Button>
-                        <Button type="submit" form="save-form" disabled={saving || !title.trim()} className="min-w-[120px]">
+                        <Button type="submit" form="save-form" disabled={saving || !title.trim()} className="min-w-[100px]">
                             {saving ? <Loader2 className="animate-spin mr-2 ml-2" /> : <Icons.Shield size={18} className={rtl ? 'ml-2' : 'mr-2'} />}
                             {saving ? t('saving') : (isNew ? t('protectSave') : t('save'))}
                         </Button>
