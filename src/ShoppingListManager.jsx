@@ -126,6 +126,7 @@ export function ShoppingListManager() {
                 </h3>
                 <Button
                     size="sm"
+                    className="ml-auto"
                     onClick={() => setIsCreating(!isCreating)}
                 >
                     <Icons.Add size={16} className={rtl ? 'ml-1' : 'mr-1'} /> {t('newShoppingList')}

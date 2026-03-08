@@ -152,6 +152,7 @@ export function VaultManager({ user }) {
                 </h3>
                 <Button
                     size="sm"
+                    className="ml-auto"
                     onClick={() => { setIsCreating(!isCreating); setUnlockingVault(null); setPassword(''); }}
                 >
                     <Icons.Add size={16} className={rtl ? 'ml-1' : 'mr-1'} /> {t('newVault')}
