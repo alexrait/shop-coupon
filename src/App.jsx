@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './AuthContext';
 import { VaultProvider, useVault } from './VaultContext';
 import { VaultManager } from './VaultManager';
 import { CouponList } from './CouponList';
+import { CouponEditPage } from './CouponEditPage';
 import { ShoppingListManager } from './ShoppingListManager';
 import { ShoppingCartView } from './ShoppingCartView';
 import ShoppingItemEditPage from './ShoppingItemEditPage';
@@ -132,7 +133,7 @@ const VaultView = ({ user }) => {
   }
 
   return (
-    <div className="container mx-auto py-4 px-2 sm:px-4 animate-in fade-in duration-700">
+    <div className="container mx-auto max-w-4xl py-4 px-2 sm:px-4 animate-in fade-in duration-700">
       <CouponList />
     </div>
   );
@@ -199,6 +200,9 @@ function AppContent() {
             } />
             <Route path="/shopping-list/:listId/item/:itemId" element={
               user ? <ShoppingItemEditPage /> : <Navigate to="/" replace />
+            } />
+            <Route path="/vault/coupon/:couponId" element={
+              user ? <CouponEditPage /> : <Navigate to="/" replace />
             } />
             <Route path="/activity" element={
               user ? <ActivityPage /> : <Navigate to="/" replace />

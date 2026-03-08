@@ -46,7 +46,7 @@ export function AuthProvider({ children }) {
         try {
             // Force refresh token if needed
             const token = await currentUser.jwt(true); 
-            return fetch(endpoint, {
+            const response = await fetch(endpoint, {
                 ...options,
                 headers: {
                     ...options.headers,
@@ -54,6 +54,16 @@ export function AuthProvider({ children }) {
                     'Content-Type': 'application/json'
                 }
             });
+            
+            // Check for 401 Unauthorized (expired token)
+            if (response.status === 401) {
+                console.warn('Token expired, logging out...');
+                netlifyIdentity.logout();
+                setUser(null);
+                throw new Error('Session expired');
+            }
+            
+            return response;
         } catch (err) {
             console.error('Auth fetch error:', err);
             throw err;

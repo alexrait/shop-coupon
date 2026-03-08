@@ -30,13 +30,6 @@ import { Label } from './components/ui/label';
 import { Badge } from './components/ui/badge';
 import { Separator } from './components/ui/separator';
 import { useLanguage } from './LanguageContext';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "./components/ui/dialog";
 
 function SortableCouponItem({ coupon, idx, rtl, t, startEdit, markStatus }) {
     const {
@@ -134,15 +127,7 @@ export function CouponList() {
     const { t, rtl } = useLanguage();
 
     const [coupons, setCoupons] = useState([]);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [editingCoupon, setEditingCoupon] = useState(null);
     const [fetching, setFetching] = useState(true);
-
-    const [title, setTitle] = useState('');
-    const [code, setCode] = useState('');
-    const [value, setValue] = useState('');
-    const [expiryDate, setExpiryDate] = useState('');
-    const [imageBase64, setImageBase64] = useState('');
     const [loading, setLoading] = useState(false);
     const [isRenamingVault, setIsRenamingVault] = useState(false);
     const [newVaultName, setNewVaultName] = useState(vaultName);
@@ -152,8 +137,6 @@ export function CouponList() {
     const [inviteLoading, setInviteLoading] = useState(false);
     const [members, setMembers] = useState([]);
     const [ownerId, setOwnerId] = useState(null);
-
-    const fileInputRef = useRef(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -256,74 +239,8 @@ export function CouponList() {
         }
     };
 
-    const handleSaveCoupon = async (e) => {
-        if (e) e.preventDefault();
-        if (!publicKey) return alert("No active vault keys found.");
-
-        setLoading(true);
-        try {
-            const payload = { title, code, value, imageBase64, expiryDate };
-            const payloadString = JSON.stringify(payload);
-
-            const aesKey = await cryptoUtils.generateAESKey();
-            const { cipher, iv } = await cryptoUtils.encryptAES(payloadString, aesKey);
-            const aesKeyBase64 = await cryptoUtils.exportAESKey(aesKey);
-            const encryptedAesKey = await cryptoUtils.encryptRSA(aesKeyBase64, publicKey);
-
-            const hybridPayload = {
-                encrypted_data: cipher,
-                iv,
-                encrypted_aes_key: encryptedAesKey
-            };
-
-            const url = editingCoupon
-                ? `/api/coupons?list_id=${vaultId}&id=${editingCoupon.id}`
-                : `/api/coupons?list_id=${vaultId}`;
-
-            const method = editingCoupon ? 'PATCH' : 'POST';
-
-            const res = await apiFetch(url, {
-                method,
-                body: JSON.stringify({ encrypted_payload: hybridPayload })
-            });
-
-            if (res.ok) {
-                await fetchCoupons();
-                if (!editingCoupon) {
-                    setTitle(''); setCode(''); setValue(''); setExpiryDate(''); setImageBase64('');
-                    if (fileInputRef.current) fileInputRef.current.value = '';
-                } else {
-                    setIsDialogOpen(false);
-                }
-            } else {
-                alert("Failed to save coupon");
-            }
-        } catch (err) {
-            console.error(err);
-            alert('Encryption failed.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const startEdit = (c) => {
-        setEditingCoupon(c);
-        setTitle(c.title || '');
-        setCode(c.code || '');
-        setValue(c.value || '');
-        setExpiryDate(c.expiryDate || '');
-        setImageBase64(c.imageBase64 || '');
-        setIsDialogOpen(true);
-    };
-
-    const handleMagicFormat = () => {
-        const clean = code.replace(/-/g, '');
-        if (clean.length > 0) {
-            const chunks = clean.match(/.{1,4}/g);
-            if (chunks) {
-                setCode(chunks.join('-'));
-            }
-        }
+        navigate(`/vault/coupon/${c.id}`);
     };
 
     const handleRenameVault = async (e) => {
@@ -448,7 +365,7 @@ export function CouponList() {
                             <Button variant="outline" size="sm" onClick={() => setIsInviting(!isInviting)}>
                                 <Icons.UserPlus size={16} className={rtl ? 'ml-2' : 'mr-2'} /> {t('share')}
                             </Button>
-                            <Button size="sm" onClick={() => setIsDialogOpen(true)}>
+                            <Button size="sm" onClick={() => navigate('/vault/coupon/new')}>
                                 <Icons.Add size={16} className={rtl ? 'ml-2' : 'mr-2'} /> {t('add')}
                             </Button>
                         </div>
@@ -524,7 +441,7 @@ export function CouponList() {
                         <div className="text-center py-20 bg-muted/10 border-2 border-dashed border-border rounded-xl">
                             <Icons.Coupon size={64} className="mx-auto mb-4 opacity-10" />
                             <p className="text-muted-foreground">{t('noVaults')}</p>
-                            <Button variant="link" onClick={() => setIsDialogOpen(true)}>{t('addCoupon')}</Button>
+                            <Button variant="link" onClick={() => navigate('/vault/coupon/new')}>{t('addCoupon')}</Button>
                         </div>
                     ) : (
                         <DndContext 
@@ -554,79 +471,6 @@ export function CouponList() {
                     )}
                 </CardContent>
             </Card>
-
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-w-md bg-card border-border shadow-2xl overflow-hidden p-0 gap-0">
-                    <DialogHeader className="p-6 pb-4 text-start border-b border-border bg-muted/20">
-                        <DialogTitle className="text-xl flex items-center gap-2">
-                            <Icons.Coupon size={24} className="text-primary" /> 
-                            {editingCoupon ? t('edit') : t('addCoupon')}
-                        </DialogTitle>
-                    </DialogHeader>
-                    
-                    <form onSubmit={handleSaveCoupon}>
-                        <div className="p-6 space-y-4 text-start">
-                            <div className="space-y-2">
-                                <Label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">{t('title')}</Label>
-                                <Input required value={title} onChange={e => setTitle(e.target.value)} placeholder="..." className="bg-background/50" />
-                            </div>
-                            
-                            <div className="space-y-2">
-                                <Label className="flex justify-between items-center text-xs text-muted-foreground uppercase font-bold tracking-wider">
-                                    {t('code')}
-                                    <Button type="button" variant="link" size="sm" className="h-auto p-0 text-[10px] text-primary" onClick={handleMagicFormat}>
-                                        <Icons.Shield size={10} className="mr-1 ml-1" /> {t('formatCode')}
-                                    </Button>
-                                </Label>
-                                <Input value={code} onChange={e => setCode(e.target.value)} placeholder="XXXX-XXXX-XXXX-XXXX" className="bg-background/50 font-mono" />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">{t('value')}</Label>
-                                    <Input value={value} onChange={e => setValue(e.target.value)} placeholder="..." className="bg-background/50" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">{t('image')}</Label>
-                                    <div className="flex items-center gap-2">
-                                        <Input type="file" ref={fileInputRef} accept="image/*" onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                                const reader = new FileReader();
-                                                reader.onloadend = () => setImageBase64(reader.result);
-                                                reader.readAsDataURL(file);
-                                            }
-                                        }} className="cursor-pointer bg-background/50 text-[10px] file:text-primary file:font-bold h-9" />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">{t('expirationDate')}</Label>
-                                    <Input 
-                                        type="date" 
-                                        value={expiryDate} 
-                                        onChange={e => setExpiryDate(e.target.value)} 
-                                        className="bg-background/50 h-9" 
-                                    />
-                                </div>
-                            </div>
-                            
-                            {imageBase64 && (
-                                <div className="mt-2 border border-border rounded overflow-hidden w-20 h-20 bg-white flex items-center justify-center mx-auto">
-                                    <img src={imageBase64} alt="Preview" className="max-w-[90%] max-h-[90%] object-contain" />
-                                </div>
-                            )}
-                        </div>
-
-                        <DialogFooter className="p-6 pt-2 bg-muted/10 border-t border-border gap-2">
-                            <Button variant="ghost" type="button" onClick={() => setIsDialogOpen(false)}>{t('cancel')}</Button>
-                            <Button type="submit" disabled={loading} className="min-w-[120px]">
-                                {loading ? <Loader2 className="animate-spin mr-2 ml-2" /> : <Icons.Shield size={18} className={rtl ? 'ml-2' : 'mr-2'} />}
-                                {loading ? t('saving') : (editingCoupon ? t('save') : t('protectSave'))}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
         </>
     );
 }

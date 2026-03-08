@@ -322,11 +322,17 @@ export function ShoppingCartView() {
 
     const handleStatusChange = async (id, status) => {
         try {
-            await apiFetch(`/api/shopping-items?list_id=${listId}&id=${id}`, {
+            const res = await apiFetch(`/api/shopping-items?list_id=${listId}&id=${id}`, {
                 method: 'PATCH',
                 body: JSON.stringify({ status })
             });
-            await fetchItems();
+            if (res.ok) {
+                await fetchItems();
+            } else {
+                const err = await res.json();
+                console.error('Failed to update status:', err);
+                alert('Failed to update item status');
+            }
         } catch (err) {
             console.error(err);
         }
@@ -335,10 +341,16 @@ export function ShoppingCartView() {
     const handleDelete = async (id) => {
         if (!confirm(t('confirmDeleteItem'))) return;
         try {
-            await apiFetch(`/api/shopping-items?list_id=${listId}&id=${id}`, {
+            const res = await apiFetch(`/api/shopping-items?list_id=${listId}&id=${id}`, {
                 method: 'DELETE'
             });
-            await fetchItems();
+            if (res.ok) {
+                await fetchItems();
+            } else {
+                const err = await res.json();
+                console.error('Failed to delete item:', err);
+                alert('Failed to delete item');
+            }
         } catch (err) {
             console.error(err);
         }

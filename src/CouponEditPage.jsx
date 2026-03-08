@@ -272,7 +272,7 @@ export function CouponEditPage() {
             <CardContent>
                 <Separator className="mb-6 opacity-40" />
 
-                <form onSubmit={handleSave} className="space-y-4">
+                <form id="save-form" onSubmit={handleSave} className="space-y-4 pb-24">
                     <div className="space-y-2">
                         <Label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">{t('title')}</Label>
                         <Input required value={title} onChange={e => setTitle(e.target.value)} placeholder="..." className="bg-background/50" />
@@ -360,17 +360,18 @@ export function CouponEditPage() {
                                 </Button>
                             </>
                         )}
-                        <div className="flex-1" />
-                        <Button type="submit" variant="ghost" onClick={() => navigate(-1)}>
-                            {t('cancel')}
-                        </Button>
-                        <Button type="submit" disabled={saving || !title.trim()} className="min-w-[120px]">
-                            {saving ? <Loader2 className="animate-spin mr-2 ml-2" /> : <Icons.Shield size={18} className={rtl ? 'ml-2' : 'mr-2'} />}
-                            {saving ? t('saving') : (isNew ? t('protectSave') : t('save'))}
-                        </Button>
                     </div>
                 </form>
             </CardContent>
+            <CardFooter className="flex gap-2 py-4 pt-2 bg-muted/10 border-t border-border fixed bottom-0 left-0 right-0">
+                <Button type="button" variant="ghost" onClick={() => navigate(-1)} className="flex-1">
+                    {t('cancel')}
+                </Button>
+                <Button type="submit" form="save-form" disabled={saving || !title.trim()} className="flex-1 min-w-[120px]">
+                    {saving ? <Loader2 className="animate-spin mr-2 ml-2" /> : <Icons.Shield size={18} className={rtl ? 'ml-2' : 'mr-2'} />}
+                    {saving ? t('saving') : (isNew ? t('protectSave') : t('save'))}
+                </Button>
+            </CardFooter>
         </Card>
     );
 }
