@@ -75,7 +75,19 @@ export function usePushNotifications() {
     const unsubscribe = async () => {
         try {
             const registration = await navigator.serviceWorker.ready;
-            const sub = await registration.pushManager.getSubscription();
+            let sub = await registration.pushManager.getSubscription();
+            
+            // If no subscription in browser but we have one in state, try to unsubscribe via API using stored endpoint
+            if (!sub && subscription) {
+                // Try to unsubscribe from API anyway (backend might have it stored)
+                await apiFetch('/api/push', {
+                    method: 'DELETE',
+                    body: JSON.stringify({ endpoint: subscription.endpoint })
+                });
+                setSubscription(null);
+                return { success: true };
+            }
+            
             if (sub) {
                 await sub.unsubscribe();
                 

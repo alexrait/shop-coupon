@@ -98,8 +98,9 @@ function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete, actionLo
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 text-muted-foreground hover:text-green-600" 
+                        className="h-8 w-8 text-muted-foreground hover:text-green-600 touch-manipulation" 
                         onClick={(e) => { e.stopPropagation(); onStatusChange(item.id, 'bought'); }} 
+                        onPointerDown={(e) => e.stopPropagation()}
                         title={t('markBought')}
                         disabled={isLoading}
                     >
@@ -109,8 +110,9 @@ function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete, actionLo
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 text-muted-foreground hover:text-primary" 
+                        className="h-8 w-8 text-muted-foreground hover:text-primary touch-manipulation" 
                         onClick={(e) => { e.stopPropagation(); onStatusChange(item.id, 'pending'); }} 
+                        onPointerDown={(e) => e.stopPropagation()}
                         title={t('markPending')}
                         disabled={isLoading}
                     >
@@ -120,8 +122,9 @@ function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete, actionLo
                 <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive" 
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive touch-manipulation" 
                     onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} 
+                    onPointerDown={(e) => e.stopPropagation()}
                     title={t('delete')}
                     disabled={isLoading}
                 >
