@@ -196,13 +196,25 @@ function AppContent() {
               user ? <VaultView user={user} /> : <Navigate to="/" replace />
             } />
             <Route path="/shopping-list/:listId" element={
-              user ? <ShoppingCartView /> : <Navigate to="/" replace />
+              user ? (
+                <div className="container mx-auto max-w-4xl py-4 px-2 sm:px-4 animate-in fade-in duration-700">
+                  <ShoppingCartView />
+                </div>
+              ) : <Navigate to="/" replace />
             } />
             <Route path="/shopping-list/:listId/item/:itemId" element={
-              user ? <ShoppingItemEditPage /> : <Navigate to="/" replace />
+              user ? (
+                <div className="container mx-auto max-w-4xl py-4 px-2 sm:px-4 animate-in fade-in duration-700">
+                  <ShoppingItemEditPage />
+                </div>
+              ) : <Navigate to="/" replace />
             } />
             <Route path="/vault/coupon/:couponId" element={
-              user ? <CouponEditPage /> : <Navigate to="/" replace />
+              user ? (
+                <div className="container mx-auto max-w-4xl py-4 px-2 sm:px-4 animate-in fade-in duration-700">
+                  <CouponEditPage />
+                </div>
+              ) : <Navigate to="/" replace />
             } />
             <Route path="/activity" element={
               user ? <ActivityPage /> : <Navigate to="/" replace />
@@ -221,7 +233,7 @@ function AppContent() {
             <div className="flex gap-4 text-sm font-medium text-muted-foreground">
               <Link to="/privacy" className="hover:text-primary transition-colors cursor-pointer">{t('privacy')}</Link>
               <Link to="/terms" className="hover:text-primary transition-colors cursor-pointer">{t('terms')}</Link>
-              <span className="text-xs opacity-50">v1.0.7</span>
+              <span className="text-xs opacity-50">v1.0.8</span>
             </div>
           </div>
         </footer>
