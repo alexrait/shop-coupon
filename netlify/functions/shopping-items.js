@@ -90,7 +90,7 @@ export const handler = async (event, context) => {
             const body = JSON.parse(event.body);
             const { status, position, quantity, note, encrypted_name } = body;
 
-            if (!itemId) return { statusCode: 400, body: 'item id required' };
+            if (!itemId) return { statusCode: 400, body: JSON.stringify({ error: 'Item ID is required.' }) };
 
             const updates = {};
             if (status) {
@@ -134,13 +134,13 @@ export const handler = async (event, context) => {
             if (!updated) {
                 return { statusCode: 404, body: JSON.stringify({ error: 'Item not found or access denied.' }) };
             }
-                // Notify members
-                await notifyMembers(sql, listId, userId, 'updateItem', {
-                    title: `${listName}: Item Updated`,
-                    body: `Item updated: ${updated.encrypted_name}`,
-                    url: `/shopping-list/${listId}`
-                });
-            }
+
+            // Notify members
+            await notifyMembers(sql, listId, userId, 'updateItem', {
+                title: `${listName}: Item Updated`,
+                body: `Item updated: ${updated.encrypted_name}`,
+                url: `/shopping-list/${listId}`
+            });
 
             return { statusCode: 200, body: JSON.stringify(updated) };
         }
