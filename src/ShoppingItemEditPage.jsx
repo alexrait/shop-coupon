@@ -37,14 +37,16 @@ export default function ShoppingItemEditPage() {
     const fetchItem = async () => {
         setLoading(true);
         try {
-            const res = await apiFetch(`/api/shopping-items?list_id=${listId}&id=${itemId}`);
+            const res = await apiFetch(`/api/shopping-items?list_id=${listId}`);
             if (res.ok) {
                 const data = await res.json();
-                if (data) {
-                    setItemName(data.encrypted_name || '');
-                    setQuantity(data.quantity || 1);
-                    setNote(data.note || '');
-                    setStatus(data.status || 'pending');
+                // GET returns all items in the list; find the one we want
+                const item = Array.isArray(data) ? data.find(i => i.id === itemId) : data;
+                if (item) {
+                    setItemName(item.encrypted_name || '');
+                    setQuantity(item.quantity || 1);
+                    setNote(item.note || '');
+                    setStatus(item.status || 'pending');
                 }
             }
         } catch (err) {
