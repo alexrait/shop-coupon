@@ -95,47 +95,38 @@ function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete, actionLo
 
             <div className={`flex items-center gap-1 ${rtl ? 'flex-row-reverse' : ''}`}>
                 {!isBought ? (
-                    <Button 
+                    <button 
                         type="button"
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-muted-foreground hover:text-green-600 touch-manipulation" 
+                        className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-green-600 touch-manipulation rounded-md"
                         onClick={(e) => { e.stopPropagation(); onStatusChange(item.id, 'bought'); }} 
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onPointerUp={(e) => e.stopPropagation()}
+                        onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); onStatusChange(item.id, 'bought'); }}
                         title={t('markBought')}
                         disabled={isLoading}
                     >
                         {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Icons.Check size={16} />}
-                    </Button>
+                    </button>
                 ) : (
-                    <Button 
+                    <button 
                         type="button"
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-muted-foreground hover:text-primary touch-manipulation" 
+                        className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-primary touch-manipulation rounded-md"
                         onClick={(e) => { e.stopPropagation(); onStatusChange(item.id, 'pending'); }} 
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onPointerUp={(e) => e.stopPropagation()}
+                        onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); onStatusChange(item.id, 'pending'); }}
                         title={t('markPending')}
                         disabled={isLoading}
                     >
                         {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Icons.ChevronRight size={16} />}
-                    </Button>
+                    </button>
                 )}
-                <Button 
+                <button 
                     type="button"
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive touch-manipulation" 
+                    className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive touch-manipulation rounded-md"
                     onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} 
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onPointerUp={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); onDelete(item.id); }}
                     title={t('delete')}
                     disabled={isLoading}
                 >
                     {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Icons.Trash size={16} />}
-                </Button>
+                </button>
             </div>
         </div>
     );
@@ -190,9 +181,12 @@ export function ShoppingCartView() {
     const fetchItems = async () => {
         setFetching(true);
         try {
+            console.log('Fetching items for list:', listId);
             const res = await apiFetch(`/api/shopping-items?list_id=${listId}`);
+            console.log('Fetch items response:', res.status, res.ok);
             if (res.ok) {
                 const data = await res.json();
+                console.log('Items received:', data.length);
                 data.sort((a, b) => (a.position || 0) - (b.position || 0));
                 setItems(data);
             }
@@ -339,21 +333,24 @@ export function ShoppingCartView() {
     };
 
     const handleStatusChange = async (id, status) => {
+        console.log('Status change:', id, status);
         setActionLoading(id);
         try {
             const res = await apiFetch(`/api/shopping-items?list_id=${listId}&id=${id}`, {
                 method: 'PATCH',
                 body: JSON.stringify({ status })
             });
+            console.log('Status change response:', res.status, res.ok);
             if (res.ok) {
                 await fetchItems();
             } else {
                 const err = await res.json();
                 console.error('Failed to update status:', err);
-                alert('Failed to update item status');
+                alert('Failed to update status: ' + (err.error || 'Unknown error'));
             }
         } catch (err) {
             console.error(err);
+            alert('Failed to update status: ' + err.message);
         } finally {
             setActionLoading(null);
         }
@@ -363,18 +360,21 @@ export function ShoppingCartView() {
         if (!confirm(t('confirmDeleteItem'))) return;
         setActionLoading(id);
         try {
+            console.log('Deleting item:', id, 'list:', listId);
             const res = await apiFetch(`/api/shopping-items?list_id=${listId}&id=${id}`, {
                 method: 'DELETE'
             });
+            console.log('Delete response:', res.status, res.ok);
             if (res.ok) {
                 await fetchItems();
             } else {
                 const err = await res.json();
                 console.error('Failed to delete item:', err);
-                alert('Failed to delete item');
+                alert('Failed to delete item: ' + (err.error || 'Unknown error'));
             }
         } catch (err) {
-            console.error(err);
+            console.error('Delete error:', err);
+            alert('Failed to delete item: ' + err.message);
         } finally {
             setActionLoading(null);
         }
