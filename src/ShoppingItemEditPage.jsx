@@ -17,16 +17,20 @@ export default function ShoppingItemEditPage() {
     const { listId, itemId } = useParams();
     const { t, rtl } = useLanguage();
 
+    const isNew = itemId === 'new';
+
     const [itemName, setItemName] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [note, setNote] = useState('');
     const [status, setStatus] = useState('pending');
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        if (listId && itemId) {
+        if (listId && itemId && !isNew) {
             fetchItem();
+        } else if (isNew) {
+            setLoading(false);
         }
     }, [listId, itemId]);
 
@@ -56,18 +60,31 @@ export default function ShoppingItemEditPage() {
 
         setSaving(true);
         try {
-            const res = await apiFetch(`/api/shopping-items?list_id=${listId}&id=${itemId}`, {
-                method: 'PATCH',
-                body: JSON.stringify({
-                    encrypted_name: itemName.trim(),
-                    quantity: parseInt(quantity) || 1,
-                    note: note || null,
-                    status: status
-                })
-            });
+            if (isNew) {
+                const res = await apiFetch(`/api/shopping-items?list_id=${listId}`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        encrypted_name: itemName.trim(),
+                        quantity: parseInt(quantity) || 1
+                    })
+                });
+                if (res.ok) {
+                    navigate(-1);
+                }
+            } else {
+                const res = await apiFetch(`/api/shopping-items?list_id=${listId}&id=${itemId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({
+                        encrypted_name: itemName.trim(),
+                        quantity: parseInt(quantity) || 1,
+                        note: note || null,
+                        status: status
+                    })
+                });
 
-            if (res.ok) {
-                navigate(-1);
+                if (res.ok) {
+                    navigate(-1);
+                }
             }
         } catch (err) {
             console.error(err);
@@ -121,7 +138,7 @@ export default function ShoppingItemEditPage() {
                         <div className="space-y-1">
                             <CardTitle className="flex items-center gap-2">
                                 <Icons.ShoppingCart size={24} className="text-primary shrink-0" />
-                                {t('editItem')}
+                                {isNew ? t('addItem') : t('editItem')}
                             </CardTitle>
                         </div>
                     </div>
@@ -130,7 +147,7 @@ export default function ShoppingItemEditPage() {
             <CardContent>
                 <Separator className="mb-6 opacity-40" />
 
-                <form onSubmit={handleSave} className="space-y-4 pb-24">
+                <form id="save-form" onSubmit={handleSave} className="space-y-4 pb-24">
                     <div className="space-y-2">
                         <Label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">{t('itemName')}</Label>
                         <Input required value={itemName} onChange={e => setItemName(e.target.value)} placeholder="..." className="bg-background/50" />
@@ -150,47 +167,64 @@ export default function ShoppingItemEditPage() {
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">{t('note')}</Label>
-                        <Input
-                            value={note}
-                            onChange={(e) => setNote(e.target.value)}
-                            placeholder={t('notePlaceholder')}
-                            className="bg-background/50"
-                        />
-                    </div>
+                    {!isNew && (
+                        <>
+                            <div className="space-y-2">
+                                <Label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">{t('note')}</Label>
+                                <Input
+                                    value={note}
+                                    onChange={(e) => setNote(e.target.value)}
+                                    placeholder={t('notePlaceholder')}
+                                    className="bg-background/50"
+                                />
+                            </div>
 
-                    <div className="flex gap-2 pt-4">
-                        <Button 
-                            type="button"
-                            variant={status === 'bought' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={handleStatusToggle}
-                            disabled={saving}
-                            className={status === 'bought' ? 'bg-green-600 hover:bg-green-700' : ''}
-                        >
-                            <Icons.Check size={16} className={rtl ? 'ml-2' : 'mr-2'} />
-                            {status === 'bought' ? t('undo') : t('markBought')}
-                        </Button>
-                        <Button 
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleDelete}
-                            className="text-destructive hover:text-destructive"
-                        >
-                            <Icons.Trash size={16} className={rtl ? 'ml-2' : 'mr-2'} />
-                            {t('delete')}
-                        </Button>
-                        <div className="flex-1" />
-                        <Button type="button" variant="ghost" onClick={() => navigate(-1)}>
-                            {t('cancel')}
-                        </Button>
-                        <Button type="submit" form="save-form" disabled={saving || !itemName.trim()} className="min-w-[120px]">
-                            {saving ? <Loader2 className="animate-spin mr-2 ml-2" /> : <Icons.Check size={18} className={rtl ? 'ml-2' : 'mr-2'} />}
-                            {saving ? t('saving') : t('save')}
-                        </Button>
-                    </div>
+                            <div className="flex gap-2 pt-4">
+                                <Button 
+                                    type="button"
+                                    variant={status === 'bought' ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={handleStatusToggle}
+                                    disabled={saving}
+                                    className={status === 'bought' ? 'bg-green-600 hover:bg-green-700' : ''}
+                                >
+                                    <Icons.Check size={16} className={rtl ? 'ml-2' : 'mr-2'} />
+                                    {status === 'bought' ? t('undo') : t('markBought')}
+                                </Button>
+                                <Button 
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleDelete}
+                                    className="text-destructive hover:text-destructive"
+                                >
+                                    <Icons.Trash size={16} className={rtl ? 'ml-2' : 'mr-2'} />
+                                    {t('delete')}
+                                </Button>
+                                <div className="flex-1" />
+                                <Button type="button" variant="ghost" onClick={() => navigate(-1)}>
+                                    {t('cancel')}
+                                </Button>
+                                <Button type="submit" form="save-form" disabled={saving || !itemName.trim()} className="min-w-[120px]">
+                                    {saving ? <Loader2 className="animate-spin mr-2 ml-2" /> : <Icons.Check size={18} className={rtl ? 'ml-2' : 'mr-2'} />}
+                                    {saving ? t('saving') : t('save')}
+                                </Button>
+                            </div>
+                        </>
+                    )}
+
+                    {isNew && (
+                        <div className="flex gap-2 pt-4">
+                            <div className="flex-1" />
+                            <Button type="button" variant="ghost" onClick={() => navigate(-1)}>
+                                {t('cancel')}
+                            </Button>
+                            <Button type="submit" form="save-form" disabled={saving || !itemName.trim()} className="min-w-[120px]">
+                                {saving ? <Loader2 className="animate-spin mr-2 ml-2" /> : <Icons.Check size={18} className={rtl ? 'ml-2' : 'mr-2'} />}
+                                {saving ? t('saving') : t('add')}
+                            </Button>
+                        </div>
+                    )}
                 </form>
             </CardContent>
         </Card>

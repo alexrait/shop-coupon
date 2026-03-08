@@ -96,11 +96,13 @@ function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete, actionLo
             <div className={`flex items-center gap-1 ${rtl ? 'flex-row-reverse' : ''}`}>
                 {!isBought ? (
                     <Button 
+                        type="button"
                         variant="ghost" 
                         size="icon" 
                         className="h-8 w-8 text-muted-foreground hover:text-green-600 touch-manipulation" 
                         onClick={(e) => { e.stopPropagation(); onStatusChange(item.id, 'bought'); }} 
                         onPointerDown={(e) => e.stopPropagation()}
+                        onPointerUp={(e) => e.stopPropagation()}
                         title={t('markBought')}
                         disabled={isLoading}
                     >
@@ -108,11 +110,13 @@ function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete, actionLo
                     </Button>
                 ) : (
                     <Button 
+                        type="button"
                         variant="ghost" 
                         size="icon" 
                         className="h-8 w-8 text-muted-foreground hover:text-primary touch-manipulation" 
                         onClick={(e) => { e.stopPropagation(); onStatusChange(item.id, 'pending'); }} 
                         onPointerDown={(e) => e.stopPropagation()}
+                        onPointerUp={(e) => e.stopPropagation()}
                         title={t('markPending')}
                         disabled={isLoading}
                     >
@@ -120,11 +124,13 @@ function SortableItem({ item, rtl, t, onStatusChange, onEdit, onDelete, actionLo
                     </Button>
                 )}
                 <Button 
+                    type="button"
                     variant="ghost" 
                     size="icon" 
                     className="h-8 w-8 text-muted-foreground hover:text-destructive touch-manipulation" 
                     onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} 
                     onPointerDown={(e) => e.stopPropagation()}
+                    onPointerUp={(e) => e.stopPropagation()}
                     title={t('delete')}
                     disabled={isLoading}
                 >
@@ -164,7 +170,11 @@ export function ShoppingCartView() {
     const nameInputRef = useRef(null);
 
     const sensors = useSensors(
-        useSensor(PointerSensor),
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
         })
@@ -431,7 +441,7 @@ export function ShoppingCartView() {
                             <Button variant="outline" size="sm" onClick={() => setIsInviting(!isInviting)}>
                                 <Icons.UserPlus size={16} className={rtl ? 'ml-2' : 'mr-2'} /> {t('share')}
                             </Button>
-                            <Button size="sm" onClick={() => setIsDialogOpen(true)}>
+                            <Button size="sm" onClick={() => navigate(`/shopping-list/${listId}/item/new`)}>
                                 <Icons.Add size={16} className={rtl ? 'ml-2' : 'mr-2'} /> {t('addItem')}
                             </Button>
                         </div>
@@ -507,7 +517,7 @@ export function ShoppingCartView() {
                         <div className="text-center py-20 bg-muted/10 border-2 border-dashed border-border rounded-xl">
                             <Icons.ShoppingCart size={64} className="mx-auto mb-4 opacity-10" />
                             <p className="text-muted-foreground">{t('noItems')}</p>
-                            <Button variant="link" onClick={() => setIsDialogOpen(true)}>{t('addFirstItem')}</Button>
+                            <Button variant="link" onClick={() => navigate(`/shopping-list/${listId}/item/new`)}>{t('addFirstItem')}</Button>
                         </div>
                     ) : (
                         <DndContext 
