@@ -368,7 +368,7 @@ export function ShoppingCartView() {
             });
             console.log('Delete response:', res.status, res.ok);
             if (res.ok) {
-                await fetchItems();
+                setItems(prev => prev.filter(i => i.id !== id));
             } else {
                 const err = await res.json();
                 console.error('Failed to delete item:', err);

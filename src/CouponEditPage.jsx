@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useVault } from './VaultContext';
+import { cryptoUtils } from './lib/crypto';
 import { 
     DndContext, 
     closestCenter, 
@@ -119,7 +120,7 @@ function SortableCoupon({ coupon, startEdit, rtl, t, onDelete }) {
 }
 
 export function CouponEditPage() {
-    const { vaultId, vaultName } = useVault();
+    const { vaultId, vaultName, privateKey, publicKey } = useVault();
     const { apiFetch } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -150,16 +151,24 @@ export function CouponEditPage() {
     const fetchCoupon = async () => {
         setLoading(true);
         try {
-            const res = await apiFetch(`/api/coupons?list_id=${vaultId}&id=${couponId}`);
+            // The API returns all coupons for the list; filter by id client-side
+            const res = await apiFetch(`/api/coupons?list_id=${vaultId}`);
             if (res.ok) {
-                const data = await res.json();
-                if (data) {
-                    setTitle(data.title || '');
-                    setCode(data.code || '');
-                    setValue(data.value || '');
-                    setExpiryDate(data.expiry_date ? data.expiry_date.split('T')[0] : '');
-                    setImageBase64(data.image_base64 || '');
-                    setStatus(data.status || 'active');
+                const allCoupons = await res.json();
+                const row = allCoupons.find(c => c.id === couponId);
+                if (row) {
+                    // Decrypt the payload exactly as CouponList does
+                    const { encrypted_data, iv, encrypted_aes_key } = row.encrypted_payload;
+                    const aesKeyBase64 = await cryptoUtils.decryptRSA(encrypted_aes_key, privateKey);
+                    const aesKey = await cryptoUtils.importAESKey(aesKeyBase64);
+                    const decryptedStr = await cryptoUtils.decryptAES(encrypted_data, iv, aesKey);
+                    const payload = JSON.parse(decryptedStr);
+                    setTitle(payload.title || '');
+                    setCode(payload.code || '');
+                    setValue(payload.value || '');
+                    setExpiryDate(payload.expiryDate ? payload.expiryDate.split('T')[0] : '');
+                    setImageBase64(payload.imageBase64 || '');
+                    setStatus(row.status || 'active');
                 }
             }
         } catch (err) {
@@ -175,15 +184,25 @@ export function CouponEditPage() {
 
         setSaving(true);
         try {
+            // Build plain payload, then encrypt with the vault's public key
+            const plainPayload = JSON.stringify({
+                title: title.trim(),
+                code: code.trim(),
+                value: value.trim(),
+                expiryDate: expiryDate || null,
+                imageBase64: imageBase64 || null
+            });
+
+            const aesKey = await cryptoUtils.generateAESKey();
+            const { cipher: encrypted_data, iv } = await cryptoUtils.encryptAES(plainPayload, aesKey);
+            const aesKeyBase64 = await cryptoUtils.exportAESKey(aesKey);
+            const encrypted_aes_key = await cryptoUtils.encryptRSA(aesKeyBase64, publicKey);
+
+            const encrypted_payload = { encrypted_data, iv, encrypted_aes_key };
+
             const res = await apiFetch(`/api/coupons?list_id=${vaultId}${isNew ? '' : `&id=${couponId}`}`, {
                 method: isNew ? 'POST' : 'PATCH',
-                body: JSON.stringify({
-                    title: title.trim(),
-                    code: code.trim(),
-                    value: value.trim(),
-                    expiry_date: expiryDate || null,
-                    image_base64: imageBase64 || null
-                })
+                body: JSON.stringify({ encrypted_payload })
             });
 
             if (res.ok) {
